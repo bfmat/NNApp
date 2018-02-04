@@ -15,7 +15,7 @@ private class MainViewController : UIViewController {
     private let modeSegmentedControl = UISegmentedControl(items: ["Train", "Test"])
     // The view controller that handles selection of the dataset used for training and testing
     private let datasetSelectionViewController = DatasetSelectionViewController()
-    // The mode-specific views that are displayed below the picker view and display settings and information for training and testing
+    // The mode-specific views that are displayed below the dataset selection view and display settings and information for training and testing
     private let trainViewController = TrainViewController()
     private let testViewController = TestViewController()
     
@@ -43,7 +43,10 @@ private class MainViewController : UIViewController {
         // Update the mode immediately so that the train view is loaded by default
         onModeUpdate()
         
-        // TODO
+        // The data selection view should be below the segmented control
+        let datasetSelectionView = datasetSelectionViewController.view!
+        view.addSubview(datasetSelectionView)
+        datasetSelectionView.topAnchor.constraint(equalTo: modeSegmentedControl.bottomAnchor, constant: uiSpacing).isActive = true
         
         // All subviews should be centered; enable autoresizing to constraints and set constraints to the sides of the screen
         for subview in view.subviews {
