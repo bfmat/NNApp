@@ -14,7 +14,7 @@ private class MainViewController : UIViewController {
     // The segmented control that allows the user to choose between training and testing modes
     private let modeSegmentedControl = UISegmentedControl(items: ["Train", "Test"])
     // The view controller that handles selection of the dataset used for training and testing
-    private let datasetSelectionViewController = DatasetSelectionViewController()
+    private var datasetSelectionViewController: DatasetSelectionViewController!
     // The mode-specific views that are displayed below the dataset selection view and display settings and information for training and testing
     private let trainViewController = TrainViewController()
     private let testViewController = TestViewController()
@@ -39,11 +39,12 @@ private class MainViewController : UIViewController {
         // Set train as the default option
         modeSegmentedControl.selectedSegmentIndex = 0
         // Register the mode update function to be run when the mode is changed
-        modeSegmentedControl.addTarget(self, action: #selector(MainViewController.onModeUpdate), for: .valueChanged)
+        modeSegmentedControl.addTarget(self, action: #selector(onModeUpdate), for: .valueChanged)
         // Update the mode immediately so that the train view is loaded by default
         onModeUpdate()
         
         // The data selection view should be below the segmented control
+        datasetSelectionViewController = DatasetSelectionViewController()
         let datasetSelectionView = datasetSelectionViewController.view!
         view.addSubview(datasetSelectionView)
         datasetSelectionView.topAnchor.constraint(equalTo: modeSegmentedControl.bottomAnchor, constant: uiSpacing).isActive = true
