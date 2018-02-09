@@ -6,16 +6,19 @@ public struct NeuralNetwork {
     private let weightMatrices: [[Float]]
     // An array of tuples containing the shapes of the weight matrices
     private let weightMatrixShapes: [(Int, Int)]
+    // A flag that represents whether or not the network should include an extra neuron in each layer whose output is always 1
+    private let useBias: Bool
     
     // Initializer accepts an array whose length is equivalent to the number of layers and whose values represent the number of neurons in the corresponding layers; the beginning of the array is the input layer and the end is the output layer
-    public init(layers: [Int]) {
+    // A value that tells the network whether or not to include a bias unit in each of the layers is also provided; this bias unit is not included in the number of neurons for each layer
+    public init(layers: [Int], useBias: Bool) {
         // Create mutable lists to add all of the weight matrices and their shapes to
         var weightMatrices = [[Float]]()
         var weightMatrixShapes = [(Int, Int)]()
         // For each of the layers in the network except for the output layer
         for layerIndex in 0..<layers.count - 1 {
-            // The shape of this matrix should be the number of neurons in this layer by the number of neurons in the next layer
-            let shape = (layers[layerIndex], layers[layerIndex + 1])
+            // The shape of this matrix should be the number of neurons in this layer by the number of neurons in the next layer; the number of neurons in this layer should be increased by one if a bias unit is used
+            let shape = (layers[layerIndex] + (useBias ? 1 : 0), layers[layerIndex + 1])
             weightMatrixShapes.append(shape)
             
             // Create an array to hold the weights for this layer
@@ -28,9 +31,10 @@ public struct NeuralNetwork {
             // Add the weights for this layer to the list of lists of weights
             weightMatrices.append(layerWeights)
         }
-        // Set the global lists of weight matrices and shapes
+        // Set the global lists of weight matrices and shapes, and the global bias flag
         self.weightMatrices = weightMatrices
         self.weightMatrixShapes = weightMatrixShapes
+        self.useBias = useBias
     }
     
     // Run inference using an array of floating-point arrays, each of which is one input
@@ -46,20 +50,25 @@ public struct NeuralNetwork {
         for (weightMatrix, shape) in zip(weightMatrices, weightMatrixShapes) {
             // Get the number of input and output neurons of this layer from the shape of the weight matrix
             let (inputNeurons, outputNeurons) = shape
+            // If bias is enabled, add an extra feature to the end of the working output which consists of the constant 1 repeating
+            if (useBias) {
+                let biasFeature = [Float](repeating: 1, count: numExamples)
+                workingOutput.append(contentsOf: biasFeature)
+            }
             // The length of the output column vector is equal to the number of output neurons times the number of examples
             var output = [Float](repeating: 0, count: outputNeurons * numExamples)
             // Multiply the weight matrix by the current working output as a row vector
-            vDSP_mmul(weightMatrix, 1, workingOutput, 1, &output, 1, vDSP_Length(inputNeurons), vDSP_Length(numExamples), vDSP_Length(output.count))
+            vDSP_mmul(weightMatrix, 1, workingOutput, 1, &output, 1, vDSP_Length(outputNeurons), vDSP_Length(numExamples), vDSP_Length(inputNeurons))
             // Update the working output with this value
             workingOutput = output
         }
         // Transpose the final working output so that it can be divided into output arrays for each example
+        let outputExampleLength = workingOutput.count / numExamples
         var outputTranspose = [Float](repeating: 0, count: workingOutput.count)
-        vDSP_mtrans(workingOutput, 1, &outputTranspose, 1, vDSP_Length(numExamples), vDSP_Length(exampleLength))
+        vDSP_mtrans(workingOutput, 1, &outputTranspose, 1, vDSP_Length(numExamples), vDSP_Length(outputExampleLength))
         // Create an output array of arrays to add the example outputs to
         var outputExamples = [[Float]]()
         // Stride over the length of the output array by the length of the output for one example
-        let outputExampleLength = outputTranspose.count / numExamples
         for exampleStartIndex in stride(from: 0, to: outputTranspose.count, by: outputExampleLength) {
             // Get the range of the transposed array from the starting index to the starting index plus the length of an example
             let outputExample = outputTranspose[exampleStartIndex..<exampleStartIndex + outputExampleLength]

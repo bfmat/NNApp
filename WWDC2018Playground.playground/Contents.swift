@@ -60,7 +60,7 @@ private class MainViewController : UIViewController {
         self.view = view
         
         // Test the neural network (temporary)
-        let nn = NeuralNetwork(layers: [4, 3, 2])
+        let nn = NeuralNetwork(layers: [4, 3, 2], useBias: true)
         print(nn.infer(input: [[0.5, 0.2, 0.8, 0.4], [0, 0, 0, 0]]))
     }
     
