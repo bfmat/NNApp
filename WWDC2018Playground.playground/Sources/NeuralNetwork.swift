@@ -42,17 +42,16 @@ public struct NeuralNetwork {
         let exampleLength = input[0].count
         var workingOutput = [Float](repeating: 0, count: numExamples * exampleLength)
         vDSP_mtrans(inputSingleDimensionalArray, 1, &workingOutput, 1, vDSP_Length(exampleLength), vDSP_Length(numExamples))
-        print(workingOutput)
         // For each of the weight matrices (represented as one-dimensional arrays) and their corresponding shapes
         for (weightMatrix, shape) in zip(weightMatrices, weightMatrixShapes) {
-            print(shape)
-            // The length of the output column vector is equal to the height of the weight matrix times the number of input examples
-            var output = [Float](repeating: 0, count: shape.1 * numExamples)
+            // Get the number of input and output neurons of this layer from the shape of the weight matrix
+            let (inputNeurons, outputNeurons) = shape
+            // The length of the output column vector is equal to the number of output neurons times the number of examples
+            var output = [Float](repeating: 0, count: outputNeurons * numExamples)
             // Multiply the weight matrix by the current working output as a row vector
-            vDSP_mmul(weightMatrix, 1, workingOutput, 1, &output, 1, vDSP_Length(shape.0), vDSP_Length(exampleLength), vDSP_Length(output.count))
+            vDSP_mmul(weightMatrix, 1, workingOutput, 1, &output, 1, vDSP_Length(inputNeurons), vDSP_Length(numExamples), vDSP_Length(output.count))
             // Update the working output with this value
             workingOutput = output
-            print(workingOutput)
         }
         // Transpose the final working output so that it can be divided into output arrays for each example
         var outputTranspose = [Float](repeating: 0, count: workingOutput.count)
