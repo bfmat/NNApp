@@ -1,5 +1,5 @@
 //: A Swift Playground designed to teach people about neural networks and allow them to experiment with training and inference
-  
+
 import UIKit
 import PlaygroundSupport
 
