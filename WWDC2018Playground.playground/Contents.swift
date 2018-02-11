@@ -58,10 +58,6 @@ private class MainViewController : UIViewController {
         
         // Set the view to be active in the current view controller
         self.view = view
-        
-        // Test the neural network (temporary)
-        let nn = NeuralNetwork(layers: [4, 3, 2])
-        print(nn.infer(input: [[0.5, 0.2, 0.8, 0.4], [0, 0, 0, 0]]))
     }
     
     // Called when the mode segmented control is updated

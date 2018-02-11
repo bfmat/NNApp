@@ -35,12 +35,12 @@ public struct NeuralNetwork {
     }
     
     // Run inference using an array of floating-point arrays, each of which is one input
-    public func infer(input: [[Float]]) -> [[Float]] {
+    public func infer(inputs: [[Float]]) -> [[Float]] {
         // Append each of the input arrays to a single-dimensional array that can be used with Accelerate
-        let inputSingleDimensionalArray = input.reduce([], +)
+        let inputSingleDimensionalArray = inputs.reduce([], +)
         // Create an array to hold the output of one layer at a time as they are executed; initialize it with the transpose of the input array
-        let numExamples = input.count
-        let exampleLength = input[0].count
+        let numExamples = inputs.count
+        let exampleLength = inputs[0].count
         var workingOutput = [Float](repeating: 0, count: numExamples * exampleLength)
         vDSP_mtrans(inputSingleDimensionalArray, 1, &workingOutput, 1, vDSP_Length(exampleLength), vDSP_Length(numExamples))
         // For each of the weight matrices (represented as one-dimensional arrays) and their corresponding shapes
@@ -52,7 +52,7 @@ public struct NeuralNetwork {
             workingOutput.append(contentsOf: biasFeature)
             // The length of the output column vector is equal to the number of output neurons times the number of examples
             var output = [Float](repeating: 0, count: outputNeurons * numExamples)
-            // Multiply the weight matrix by the current working output as a row vector
+            // Multiply the weight matrix by the current working output
             vDSP_mmul(weightMatrix, 1, workingOutput, 1, &output, 1, vDSP_Length(outputNeurons), vDSP_Length(numExamples), vDSP_Length(inputNeurons))
             // Update the working output with this value
             workingOutput = output
@@ -72,5 +72,21 @@ public struct NeuralNetwork {
         }
         // Return the list of output examples
         return outputExamples
+    }
+    
+    // Train the neural network, provided inputs, ground truth outputs, and other training parameters
+    public func train(inputs: [[Float]], groundTruths: [[Float]], epochs: Int, learningRate: Float) {
+        
+    }
+    
+    // Calculate the mean squared error function with a single-dimensional list of ground truths and corresponding hypotheses
+    private func cost(groundTruthsFlat: [Float], hypothesesFlat: [Float]) {
+        // Multiply the hypotheses matrix by -1 and add it to the ground truths matrix to get a matrix of errors
+        let numValues = hypothesesFlat.count
+        var negativeHypothesesFlat = [Float](repeating: 0, count: numValues)
+        var multiplier: Float = -1
+        vDSP_vsmul(hypothesesFlat, 1, &multiplier, &negativeHypothesesFlat, 1, vDSP_Length(numValues))
+        var errors = [Float](repeating: 0, count: numValues)
+        vDSP_vadd(groundTruthsFlat, 1, hypothesesFlat, 1, &errors, 1, vDSP_Length(numValues))
     }
 }
