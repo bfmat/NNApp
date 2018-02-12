@@ -23,7 +23,7 @@ public struct NeuralNetwork {
             var layerWeights = [Float]()
             // Iterate over both dimensions of the shape
             for _ in 0..<(shape.0 * shape.1) {
-                let randomWeight = (Float(drand48()) - 0.5) * 2
+                let randomWeight = Float(drand48())
                 layerWeights.append(randomWeight)
             }
             // Add the weights for this layer to the list of lists of weights
@@ -34,15 +34,46 @@ public struct NeuralNetwork {
         self.weightMatrixShapes = weightMatrixShapes
     }
     
-    // Run inference using an array of floating-point arrays, each of which is one input
+    // Run forward propagation and reshape the output so it can be used
     public func infer(inputs: [[Float]]) -> [[Float]] {
-        // Append each of the input arrays to a single-dimensional array that can be used with Accelerate
-        let inputSingleDimensionalArray = inputs.reduce([], +)
-        // Create an array to hold the output of one layer at a time as they are executed; initialize it with the transpose of the input array
+        // Prepare the inputs and run forward propagation
+        let inputsPrepared = prepareInput(inputs)
         let numExamples = inputs.count
-        let exampleLength = inputs[0].count
-        var workingOutput = [Float](repeating: 0, count: numExamples * exampleLength)
-        vDSP_mtrans(inputSingleDimensionalArray, 1, &workingOutput, 1, vDSP_Length(exampleLength), vDSP_Length(numExamples))
+        let outputsSingleDimensional = forwardPropagate(inputsSingleDimensional: inputsPrepared, numExamples: numExamples)
+        // Transpose the final working output so that it can be divided into output arrays for each example
+        let numOutputs = outputsSingleDimensional.count
+        let outputExampleLength = numOutputs / numExamples
+        var outputTranspose = [Float](repeating: 0, count: numOutputs)
+        vDSP_mtrans(outputsSingleDimensional, 1, &outputTranspose, 1, vDSP_Length(numExamples), vDSP_Length(outputExampleLength))
+        // Create an output array of arrays to add the example outputs to
+        var outputExamples = [[Float]]()
+        // Stride over the length of the output array by the length of the output for one example
+        for exampleStartIndex in stride(from: 0, to: outputTranspose.count, by: outputExampleLength) {
+            // Get the range of the transposed array from the starting index to the starting index plus the length of an example
+            let outputExample = outputTranspose[exampleStartIndex..<exampleStartIndex + outputExampleLength]
+            // Append the list to the list of output examples
+            outputExamples.append(Array(outputExample))
+        }
+        // Return the list of output examples
+        return outputExamples
+    }
+    
+    // Transpose and flatten a two-dimensional matrix in preparation for forward or back propagation
+    private func flattenAndTranspose(_ matrix: [[Float]]) -> [Float] {
+        // Append each of the arrays to a single-dimensional array that can be used with Accelerate
+        let matrixFlat = matrix.reduce([], +)
+        // Transpose the single-dimensional array so it can be used by Accelerate's linear algebra routines
+        let numVectors = matrix.count
+        let vectorLength = matrix[0].count
+        var matrixTranspose = [Float](repeating: 0, count: numVectors * vectorLength)
+        vDSP_mtrans(matrixFlat, 1, &matrixTranspose, 1, vDSP_Length(vectorLength), vDSP_Length(numVectors))
+        return matrixTranspose
+    }
+    
+    // Run forward propagation using a transposed array of examples and the number of examples
+    private func forwardPropagate(inputsSingleDimensional: [Float], numExamples: Int) -> [Float] {
+        // Copy the inputs array so it can be modified during each iteration
+        var workingOutput = inputsSingleDimensional
         // For each of the weight matrices (represented as one-dimensional arrays) and their corresponding shapes
         for (weightMatrix, shape) in zip(weightMatrices, weightMatrixShapes) {
             // Get the number of input and output neurons of this layer from the shape of the weight matrix
@@ -57,30 +88,26 @@ public struct NeuralNetwork {
             // Update the working output with this value
             workingOutput = output
         }
-        // Transpose the final working output so that it can be divided into output arrays for each example
-        let outputExampleLength = workingOutput.count / numExamples
-        var outputTranspose = [Float](repeating: 0, count: workingOutput.count)
-        vDSP_mtrans(workingOutput, 1, &outputTranspose, 1, vDSP_Length(numExamples), vDSP_Length(outputExampleLength))
-        // Create an output array of arrays to add the example outputs to
-        var outputExamples = [[Float]]()
-        // Stride over the length of the output array by the length of the output for one example
-        for exampleStartIndex in stride(from: 0, to: outputTranspose.count, by: outputExampleLength) {
-            // Get the range of the transposed array from the starting index to the starting index plus the length of an example
-            let outputExample = outputTranspose[exampleStartIndex..<exampleStartIndex + outputExampleLength]
-            // Append the list to the list of output examples
-            outputExamples.append(Array(outputExample))
-        }
-        // Return the list of output examples
-        return outputExamples
+        // Return the final working output as the raw single-dimensional transposed matrix
+        return workingOutput
     }
     
     // Train the neural network, provided inputs, ground truth outputs, and other training parameters
     public func train(inputs: [[Float]], groundTruths: [[Float]], epochs: Int, learningRate: Float) {
-        
+        // Prepare the input values for forward propagation
+        let inputsFlat = flattenAndTranspose(inputs)
+        // Transpose and flatten the ground truths for backpropagation
+        let groundTruthsFlat = flattenAndTranspose(groundTruths)
+        // Repeat the training loop for each epoch
+        for epoch in 0..<epochs {
+            // Run forwatrd propagation to compute a hypothesis
+            let outputsSingleDimensional = forwardPropagate(inputsSingleDimensional: inputsFlat, numExamples: inputs.count)
+            // Subtract the outputs from the corresponding ground truth to get an error
+        }
     }
     
     // Calculate the mean squared error function with a single-dimensional list of ground truths and corresponding hypotheses
-    private func cost(groundTruthsFlat: [Float], hypothesesFlat: [Float]) {
+    private func cost(groundTruthsFlat: [Float], hypothesesFlat: [Float]) -> Float {
         // Multiply the hypotheses matrix by -1 and add it to the ground truths matrix to get a matrix of errors
         let numValues = hypothesesFlat.count
         var negativeHypothesesFlat = [Float](repeating: 0, count: numValues)
@@ -88,5 +115,15 @@ public struct NeuralNetwork {
         vDSP_vsmul(hypothesesFlat, 1, &multiplier, &negativeHypothesesFlat, 1, vDSP_Length(numValues))
         var errors = [Float](repeating: 0, count: numValues)
         vDSP_vadd(groundTruthsFlat, 1, hypothesesFlat, 1, &errors, 1, vDSP_Length(numValues))
+        // Calculate the dot product of the errors vector with itself, which is equivalent to the sum of the square of each element
+        var totalSquaredError: Float = 0
+        vDSP_dotpr(errors, 1, errors, 1, &totalSquaredError, vDSP_Length(numValues))
+        // Return the total squared error divided by the number of elements, which is the mean squared error
+        return totalSquaredError / Float(numValues)
+    }
+    
+    // Run back propagation and update the weights of the network provided the transposed error matrix for the last layer and the learning rate
+    private func backPropagate(errorsFlat: [Float], learningRate: Float) {
+        
     }
 }
