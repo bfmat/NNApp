@@ -37,7 +37,7 @@ public struct NeuralNetwork {
     // Run forward propagation and reshape the output so it can be used
     public func infer(inputs: [[Float]]) -> [[Float]] {
         // Prepare the inputs and run forward propagation
-        let inputsPrepared = prepareInput(inputs)
+        let inputsPrepared = flattenAndTranspose(inputs)
         let numExamples = inputs.count
         let outputsSingleDimensional = forwardPropagate(inputsSingleDimensional: inputsPrepared, numExamples: numExamples)
         // Transpose the final working output so that it can be divided into output arrays for each example
@@ -100,26 +100,37 @@ public struct NeuralNetwork {
         let groundTruthsFlat = flattenAndTranspose(groundTruths)
         // Repeat the training loop for each epoch
         for epoch in 0..<epochs {
-            // Run forwatrd propagation to compute a hypothesis
-            let outputsSingleDimensional = forwardPropagate(inputsSingleDimensional: inputsFlat, numExamples: inputs.count)
-            // Subtract the outputs from the corresponding ground truth to get an error
+            // Run forward propagation to compute a flat matrix of hypotheses
+            let hypothesesFlat = forwardPropagate(inputsSingleDimensional: inputsFlat, numExamples: inputs.count)
+            // Subtract the hypotheses from the ground truths to get a flat matrix of errors
+            let errorsFlat = subtractMatrices(hypothesesFlat, from: groundTruthsFlat)
+            // Print out the cost function for this iteration
+            print("Cost function for iteration \(epoch): \(cost(errors: errorsFlat))")
+            // Run back propagation with the flat matrix of errors and provided learning rate
+            backPropagate(errorsFlat: errorsFlat, learningRate: learningRate)
         }
     }
     
-    // Calculate the mean squared error function with a single-dimensional list of ground truths and corresponding hypotheses
-    private func cost(groundTruthsFlat: [Float], hypothesesFlat: [Float]) -> Float {
-        // Multiply the hypotheses matrix by -1 and add it to the ground truths matrix to get a matrix of errors
-        let numValues = hypothesesFlat.count
-        var negativeHypothesesFlat = [Float](repeating: 0, count: numValues)
-        var multiplier: Float = -1
-        vDSP_vsmul(hypothesesFlat, 1, &multiplier, &negativeHypothesesFlat, 1, vDSP_Length(numValues))
-        var errors = [Float](repeating: 0, count: numValues)
-        vDSP_vadd(groundTruthsFlat, 1, hypothesesFlat, 1, &errors, 1, vDSP_Length(numValues))
+    // Calculate the mean squared error function with a vector of errors between the ground truths and hypotheses
+    private func cost(errors: [Float]) -> Float {
         // Calculate the dot product of the errors vector with itself, which is equivalent to the sum of the square of each element
+        let numValues = errors.count
         var totalSquaredError: Float = 0
         vDSP_dotpr(errors, 1, errors, 1, &totalSquaredError, vDSP_Length(numValues))
         // Return the total squared error divided by the number of elements, which is the mean squared error
         return totalSquaredError / Float(numValues)
+    }
+    
+    // Subtract one single-dimensional floating-point matrix from another
+    private func subtractMatrices(_ array0: [Float], from array1: [Float]) -> [Float] {
+        // Multiply the first array by -1 and add it to the second array
+        let numValues = array0.count
+        var negativeArray0 = [Float](repeating: 0, count: numValues)
+        var multiplier: Float = -1
+        vDSP_vsmul(array0, 1, &multiplier, &negativeArray0, 1, vDSP_Length(numValues))
+        var output = [Float](repeating: 0, count: numValues)
+        vDSP_vadd(negativeArray0, 1, array1, 1, &output, 1, vDSP_Length(numValues))
+        return output
     }
     
     // Run back propagation and update the weights of the network provided the transposed error matrix for the last layer and the learning rate
