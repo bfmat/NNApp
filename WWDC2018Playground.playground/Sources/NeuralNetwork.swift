@@ -39,7 +39,7 @@ public struct NeuralNetwork {
         // Prepare the inputs and run forward propagation, taking the outputs for the last layer only
         let inputsPrepared = flattenAndTranspose(inputs)
         let numExamples = inputs.count
-        let outputsSingleDimensional = forwardPropagate(inputsSingleDimensional: inputsPrepared, numExamples: numExamples).last!
+        let outputsSingleDimensional = forwardPropagate(inputsSingleDimensional: inputsPrepared, numExamples: numExamples).outputs.last!
         // Transpose the final working output so that it can be divided into output arrays for each example
         let numOutputs = outputsSingleDimensional.count
         let outputExampleLength = numOutputs / numExamples
@@ -70,10 +70,12 @@ public struct NeuralNetwork {
         return matrixTranspose
     }
     
-    // Run forward propagation using a transposed array of examples and the number of examples, returning a matrix of outputs for each layer in the network
-    private func forwardPropagate(inputsSingleDimensional: [Float], numExamples: Int) -> [[Float]] {
-        // Create an array to add the outputs for each layer to, before the activation function
-        var outputs = [[Float]]()
+    // Run forward propagation using a transposed array of examples and the number of examples, returning matrices of outputs and activations for each layer in the network
+    private func forwardPropagate(inputsSingleDimensional: [Float], numExamples: Int) -> (outputs: [[Float]], activations: [[Float]]) {
+        // Create an array to add the outputs for each layer to, before the activation function; initialize it to contain the input matrix
+        var outputs = [inputsSingleDimensional]
+        // Create a similar array for the activation vectors, also containing the inputs (since there is no activation function on the first layer)
+        var activations = [inputsSingleDimensional]
         // Copy the inputs array so it can be modified during each iteration with the activations of each layer
         var workingActivation = inputsSingleDimensional
         // For each of the weight matrices (represented as one-dimensional arrays) and their corresponding shapes
@@ -94,11 +96,13 @@ public struct NeuralNetwork {
             var activation = [Float](repeating: 0, count: numOutputs)
             var numOutputsMutable = Int32(numOutputs)
             vvtanhf(&activation, output, &numOutputsMutable)
+            // Add it to the list of activation vectors
+            activations.append(activation)
             // Update the working activation with this value
             workingActivation = activation
         }
-        // Return the outputs for each layer
-        return outputs
+        // Return the outputs and activations for each layer
+        return (outputs, activations)
     }
     
     // Train the neural network, provided inputs, ground truth outputs, and other training parameters
@@ -109,16 +113,16 @@ public struct NeuralNetwork {
         let groundTruthsFlat = flattenAndTranspose(groundTruths)
         // Repeat the training loop for each epoch
         for epoch in 0..<epochs {
-            // Run forward propagation to compute outputs for each layer in the network
-            let outputs = forwardPropagate(inputsSingleDimensional: inputsFlat, numExamples: inputs.count)
+            // Run forward propagation to compute outputs and activations for each layer in the network
+            let (outputs, activations) = forwardPropagate(inputsSingleDimensional: inputsFlat, numExamples: inputs.count)
             // Get the outputs for the last layer, which are the hypotheses for the given training examples
             let hypothesesFlat = outputs.last!
             // Subtract the hypotheses from the ground truths to get a flat matrix of errors
             let errorsFlat = subtractMatrices(hypothesesFlat, from: groundTruthsFlat)
             // Print out the cost function for this iteration
             print("Cost function for iteration \(epoch): \(cost(errors: errorsFlat))")
-            // Run back propagation with the flat matrix of errors, outputs for all layers, and provided learning rate
-            backPropagate(errorsFlat: errorsFlat, outputsAllLayers: outputs, learningRate: learningRate)
+            // Run back propagation with the flat matrix of errors, outputs and activations for all layers, and provided learning rate
+            backPropagate(errorsFlat: errorsFlat, outputs: outputs, activations: activations, learningRate: learningRate)
         }
     }
     
@@ -144,11 +148,39 @@ public struct NeuralNetwork {
         return output
     }
     
-    // Run back propagation and update the weights of the network provided the transposed error matrix for the last layer, the activations of each layer of the network, and the learning rate
-    private func backPropagate(errorsFlat: [Float], outputsAllLayers: [[Float]], learningRate: Float) {
-        // Iterate backwards over the outputs for each of the layers, starting with the final output
-        for output in outputsAllLayers.reversed() {
+    // Run back propagation and update the weights of the network provided the average error vector for the last layer, the outputs and activations of each layer of the network, and the learning rate
+    private func backPropagate(averageErrors: [Float], outputs: [[Float]], activations: [[Float]], learningRate: Float) {
+        // Create an array of output gradients to update for each layer, initialized with the errors for the last layer
+        var workingOutputGradients = averageErrors
+        // Iterate backwards over the indices of the weight matrices, not including the very first one
+        for weightMatrixIndex in (1..<weightMatrices.count).reversed() {
+            // Get the number of input and output neurons of this layer from the shape of the weight matrix
+            let (inputNeurons, outputNeurons) = weightMatrixShapes[weightMatrixIndex]
+            let numWeights = inputNeurons * outputNeurons
+            // Compute the transpose of this weight matrix so that it can be used to propagate backwards through this layer
+            let weightMatrix = weightMatrices[weightMatrixIndex]
+            var weightMatrixTranspose = [Float](repeating: 0, count: numWeights)
+            vDSP_mtrans(weightMatrices[weightMatrixIndex], 1, &weightMatrixTranspose, 1, vDSP_Length(outputNeurons), vDSP_Length(inputNeurons))
+            // Get the gradients for the current weight matrix by calculating the matrix product of the output gradients and the activations for the preceding layer
+            var weightGradients = [Float](repeating: 0, count: numWeights)
+            vDSP_mmul(workingOutputGradients, 1, activations[weightMatrixIndex], 1, &weightGradients, 1, vDSP_Length(outputNeurons), 1, vDSP_Length(inputNeurons))
+            // Multiply the matrix of gradients by the negative of the learning rate to get a matrix of steps for each of the weights
+            var weightSteps = [Float](repeating: 0, count: numWeights)
+            var learningRateMutable = learningRate
+            vDSP_vsmul(weightGradients, 1, &learningRateMutable, &weightSteps, 1, vDSP_Length(numWeights))
+            // Add the matrix of steps to the matrix of weights to complete the weight update
+            vDSP_vadd(weightMatrix, 1, weightSteps, 1, &(weightMatrices[weightMatrixIndex]), 1, vDSP_Length(numWeights))
             
+            // Multiply the weight matrix transpose by the output errors to get gradients for the activations of the preceding layer
+            var activationGradients = [Float](repeating: 0, count: inputNeurons)
+            vDSP_mmul(weightMatrixTranspose, 1, workingOutputGradients, 1, &activationGradients, 1, vDSP_Length(outputNeurons), 1, vDSP_Length(inputNeurons))
+            // Run the outputs for the preceding layer through the inverse hyperbolic tangent activation function
+            var inverselyActivatedPrecedingLayerOutputs = [Float](repeating: 0, count: inputNeurons)
+            var inputNeuronsMutable = Int32(inputNeurons)
+            vvatanhf(&inverselyActivatedPrecedingLayerOutputs, outputs[weightMatrixIndex], &inputNeuronsMutable)
+            // Element-wise multiply the activation gradients by the inversely activated outputs; this produces the output gradients for the preceding layer, which will be used on the next iteration
+            workingOutputGradients = [Float](repeating: 0, count: inputNeurons)
+            vDSP_vmul(activationGradients, 1, inverselyActivatedPrecedingLayerOutputs, 1, &workingOutputGradients, 1, vDSP_Length(outputNeurons))
         }
     }
 }
