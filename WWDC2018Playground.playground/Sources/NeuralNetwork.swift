@@ -36,10 +36,10 @@ public struct NeuralNetwork {
     
     // Run forward propagation and reshape the output so it can be used
     public func infer(inputs: [[Float]]) -> [[Float]] {
-        // Prepare the inputs and run forward propagation
+        // Prepare the inputs and run forward propagation, taking the outputs for the last layer only
         let inputsPrepared = flattenAndTranspose(inputs)
         let numExamples = inputs.count
-        let outputsSingleDimensional = forwardPropagate(inputsSingleDimensional: inputsPrepared, numExamples: numExamples)
+        let outputsSingleDimensional = forwardPropagate(inputsSingleDimensional: inputsPrepared, numExamples: numExamples).last!
         // Transpose the final working output so that it can be divided into output arrays for each example
         let numOutputs = outputsSingleDimensional.count
         let outputExampleLength = numOutputs / numExamples
@@ -70,26 +70,35 @@ public struct NeuralNetwork {
         return matrixTranspose
     }
     
-    // Run forward propagation using a transposed array of examples and the number of examples
-    private func forwardPropagate(inputsSingleDimensional: [Float], numExamples: Int) -> [Float] {
-        // Copy the inputs array so it can be modified during each iteration
-        var workingOutput = inputsSingleDimensional
+    // Run forward propagation using a transposed array of examples and the number of examples, returning a matrix of outputs for each layer in the network
+    private func forwardPropagate(inputsSingleDimensional: [Float], numExamples: Int) -> [[Float]] {
+        // Create an array to add the outputs for each layer to, before the activation function
+        var outputs = [[Float]]()
+        // Copy the inputs array so it can be modified during each iteration with the activations of each layer
+        var workingActivation = inputsSingleDimensional
         // For each of the weight matrices (represented as one-dimensional arrays) and their corresponding shapes
         for (weightMatrix, shape) in zip(weightMatrices, weightMatrixShapes) {
             // Get the number of input and output neurons of this layer from the shape of the weight matrix
             let (inputNeurons, outputNeurons) = shape
-            // Add a bias feature to the end of the working output which consists of the constant 1 repeating
+            // Add a bias feature to the end of the working activation which consists of the constant 1 repeating
             let biasFeature = [Float](repeating: 1, count: numExamples)
-            workingOutput.append(contentsOf: biasFeature)
+            workingActivation.append(contentsOf: biasFeature)
             // The length of the output column vector is equal to the number of output neurons times the number of examples
-            var output = [Float](repeating: 0, count: outputNeurons * numExamples)
-            // Multiply the weight matrix by the current working output
-            vDSP_mmul(weightMatrix, 1, workingOutput, 1, &output, 1, vDSP_Length(outputNeurons), vDSP_Length(numExamples), vDSP_Length(inputNeurons))
-            // Update the working output with this value
-            workingOutput = output
+            let numOutputs = outputNeurons * numExamples
+            var output = [Float](repeating: 0, count: numOutputs)
+            // Multiply the weight matrix by the current working activation
+            vDSP_mmul(weightMatrix, 1, workingActivation, 1, &output, 1, vDSP_Length(outputNeurons), vDSP_Length(numExamples), vDSP_Length(inputNeurons))
+            // Add the returned value to the list of outputs, without applying the activation function
+            outputs.append(output)
+            // Apply the hyperbolic tangent activation function to the matrix of outputs
+            var activation = [Float](repeating: 0, count: numOutputs)
+            var numOutputsMutable = Int32(numOutputs)
+            vvtanhf(&activation, output, &numOutputsMutable)
+            // Update the working activation with this value
+            workingActivation = activation
         }
-        // Return the final working output as the raw single-dimensional transposed matrix
-        return workingOutput
+        // Return the outputs for each layer
+        return outputs
     }
     
     // Train the neural network, provided inputs, ground truth outputs, and other training parameters
@@ -100,25 +109,27 @@ public struct NeuralNetwork {
         let groundTruthsFlat = flattenAndTranspose(groundTruths)
         // Repeat the training loop for each epoch
         for epoch in 0..<epochs {
-            // Run forward propagation to compute a flat matrix of hypotheses
-            let hypothesesFlat = forwardPropagate(inputsSingleDimensional: inputsFlat, numExamples: inputs.count)
+            // Run forward propagation to compute outputs for each layer in the network
+            let outputs = forwardPropagate(inputsSingleDimensional: inputsFlat, numExamples: inputs.count)
+            // Get the outputs for the last layer, which are the hypotheses for the given training examples
+            let hypothesesFlat = outputs.last!
             // Subtract the hypotheses from the ground truths to get a flat matrix of errors
             let errorsFlat = subtractMatrices(hypothesesFlat, from: groundTruthsFlat)
             // Print out the cost function for this iteration
             print("Cost function for iteration \(epoch): \(cost(errors: errorsFlat))")
-            // Run back propagation with the flat matrix of errors and provided learning rate
-            backPropagate(errorsFlat: errorsFlat, learningRate: learningRate)
+            // Run back propagation with the flat matrix of errors, outputs for all layers, and provided learning rate
+            backPropagate(errorsFlat: errorsFlat, outputsAllLayers: outputs, learningRate: learningRate)
         }
     }
     
-    // Calculate the mean squared error function with a vector of errors between the ground truths and hypotheses
+    // Calculate the half mean squared error function with a vector of errors between the ground truths and hypotheses
     private func cost(errors: [Float]) -> Float {
         // Calculate the dot product of the errors vector with itself, which is equivalent to the sum of the square of each element
         let numValues = errors.count
         var totalSquaredError: Float = 0
         vDSP_dotpr(errors, 1, errors, 1, &totalSquaredError, vDSP_Length(numValues))
-        // Return the total squared error divided by the number of elements, which is the mean squared error
-        return totalSquaredError / Float(numValues)
+        // Return the total squared error divided by the number of elements times two, which is half of the mean squared error
+        return totalSquaredError / (Float(numValues) * 2)
     }
     
     // Subtract one single-dimensional floating-point matrix from another
@@ -133,8 +144,11 @@ public struct NeuralNetwork {
         return output
     }
     
-    // Run back propagation and update the weights of the network provided the transposed error matrix for the last layer and the learning rate
-    private func backPropagate(errorsFlat: [Float], learningRate: Float) {
-        
+    // Run back propagation and update the weights of the network provided the transposed error matrix for the last layer, the activations of each layer of the network, and the learning rate
+    private func backPropagate(errorsFlat: [Float], outputsAllLayers: [[Float]], learningRate: Float) {
+        // Iterate backwards over the outputs for each of the layers, starting with the final output
+        for output in outputsAllLayers.reversed() {
+            
+        }
     }
 }
