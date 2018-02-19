@@ -212,5 +212,5 @@ public struct NeuralNetwork {
 
 var nn = NeuralNetwork(layers: [4, 3, 2])
 print(nn.infer(inputs: [[0, 0, 0, 0]]))
-nn.train(inputs: [[0, 0, 0, 0]], groundTruths: [[3, 3]], epochs: 10000, learningRate: 0.001)
+nn.train(inputs: [[0, 0, 0, 0]], groundTruths: [[3, 3]], epochs: 1, learningRate: 0.001)
 print(nn.infer(inputs: [[0, 0, 0, 0]]))
