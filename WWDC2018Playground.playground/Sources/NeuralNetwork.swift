@@ -13,17 +13,19 @@ public struct NeuralNetwork {
         // Create mutable lists to add all of the weight matrices and their shapes to
         var weightMatrices = [[Float]]()
         var weightMatrixShapes = [(Int, Int)]()
+        // Seed the random number generator with the current time
+        let time = Int(Date().timeIntervalSinceReferenceDate)
+        srand48(time)
         // For each of the layers in the network except for the output layer
         for layerIndex in 0..<layers.count - 1 {
             // The shape of this matrix should be the number of neurons in this layer by the number of neurons in the next layer; the number of neurons in this layer should be increased by one to accomodate the bias unit
             let shape = (layers[layerIndex] + 1, layers[layerIndex + 1])
             weightMatrixShapes.append(shape)
-            
             // Create an array to hold the weights for this layer
             var layerWeights = [Float]()
             // Iterate over both dimensions of the shape
             for _ in 0..<(shape.0 * shape.1) {
-                let randomWeight = Float(1) // Float(drand48())
+                let randomWeight = Float(drand48())
                 layerWeights.append(randomWeight)
             }
             // Add the weights for this layer to the list of lists of weights
@@ -115,16 +117,13 @@ public struct NeuralNetwork {
         let numExamples = groundTruths.count
         let outputExampleLength = groundTruths[0].count
         // Repeat the training loop for each epoch
-        for epoch in 0..<epochs {
-            print("Running forward propagation for iteration \(epoch)")
+        for _ in 0..<epochs {
             // Run forward propagation to compute outputs and activations for each layer in the network
             let (outputs, activations) = forwardPropagate(inputsSingleDimensional: inputsFlat, numExamples: inputs.count)
             // Get the outputs for the last layer, which are the hypotheses for the given training examples
             let hypothesesFlat = outputs.last!
             // Subtract the hypotheses from the ground truths to get a flat matrix of errors
             let errorsFlat = subtractMatrices(hypothesesFlat, from: groundTruthsFlat)
-            print("Cost function: \(cost(errors: errorsFlat))")
-            print("Running back propagation with learning rate \(learningRate)")
             // Transpose the flat matrix of errors so it can be divided up into training examples
             var errorsExampleOrdered = [Float](repeating: 0, count: numExamples * outputExampleLength)
             vDSP_mtrans(errorsFlat, 1, &errorsExampleOrdered, 1, vDSP_Length(numExamples), vDSP_Length(outputExampleLength))
