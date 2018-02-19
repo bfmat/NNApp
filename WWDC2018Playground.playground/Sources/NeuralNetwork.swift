@@ -191,25 +191,24 @@ public struct NeuralNetwork {
             // Calculate the derivative of the hyperbolic tangent activation function for the outputs of the preceding layer
             // The derivative of tanh(x) is 1 - (tanh(x) ^ 2), and tanh(x) has already been calculated; it is the activation corresponding to each output
             // This means the derivative of the activation with respect to the output is just 1 minus the square of the activation
+            // The number of output neurons in the previous layer is one less than the number of input neurons of this layer, because it does not include the bias term
+            let outputNeuronsPreviousLayer = inputNeurons - 1
             // Calculate the square of each element in the activation
-            var activationSquares = [Float](repeating: 0, count: inputNeurons)
-            vDSP_vsq(layerActivations, 1, &activationSquares, 1, vDSP_Length(inputNeurons))
+            var activationSquares = [Float](repeating: 0, count: outputNeuronsPreviousLayer)
+            vDSP_vsq(layerActivations, 1, &activationSquares, 1, vDSP_Length(outputNeuronsPreviousLayer))
             // Multiply the squares by -1
-            var negativeActivationSquares = [Float](repeating: 0, count: inputNeurons)
+            var negativeActivationSquares = [Float](repeating: 0, count: outputNeuronsPreviousLayer)
             var negativeOne: Float = -1
-            vDSP_vsmul(activationSquares, 1, &negativeOne, &negativeActivationSquares, 1, vDSP_Length(inputNeurons))
+            vDSP_vsmul(activationSquares, 1, &negativeOne, &negativeActivationSquares, 1, vDSP_Length(outputNeuronsPreviousLayer))
             // Add 1 to every element of the negative squares to get the derivatives of the activation function
-            var activationFunctionDerivatives = [Float](repeating: 0, count: inputNeurons)
+            var activationFunctionDerivatives = [Float](repeating: 0, count: outputNeuronsPreviousLayer)
             var one: Float = 1
-            vDSP_vsadd(negativeActivationSquares, 1, &one, &activationFunctionDerivatives, 1, vDSP_Length(inputNeurons))
+            vDSP_vsadd(negativeActivationSquares, 1, &one, &activationFunctionDerivatives, 1, vDSP_Length(outputNeuronsPreviousLayer))
+            // Remove the last element, corresponding to the bias term, from the activation gradients; the new array will be the number of output neurons of the previous layer
+            let activationGradientsWithoutBias = Array(activationGradients[0..<outputNeuronsPreviousLayer])
             // Element-wise multiply the activation gradients by the derivatives of the activation function; this produces the output gradients for the preceding layer, which will be used on the next iteration
-            workingOutputGradients = [Float](repeating: 0, count: inputNeurons)
-            vDSP_vmul(activationGradients, 1, activationFunctionDerivatives, 1, &workingOutputGradients, 1, vDSP_Length(outputNeurons))
+            workingOutputGradients = [Float](repeating: 0, count: outputNeuronsPreviousLayer)
+            vDSP_vmul(activationGradientsWithoutBias, 1, activationFunctionDerivatives, 1, &workingOutputGradients, 1, vDSP_Length(outputNeuronsPreviousLayer))
         }
     }
 }
-
-var nn = NeuralNetwork(layers: [4, 3, 2])
-print("initial:", nn.infer(inputs: [[0, 0, 0, 0]]))
-nn.train(inputs: [[0, 0, 0, 0]], groundTruths: [[3, 3]], epochs: 1000, learningRate: 0.01)
-print("final:", nn.infer(inputs: [[0, 0, 0, 0]]))
