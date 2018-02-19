@@ -188,7 +188,7 @@ public struct NeuralNetwork {
             vDSP_mtrans(weightMatrices[weightMatrixIndex], 1, &weightMatrixTranspose, 1, vDSP_Length(outputNeurons), vDSP_Length(inputNeurons))
             // Multiply the weight matrix transpose by the output errors to get gradients for the activations of the preceding layer
             var activationGradients = [Float](repeating: 0, count: inputNeurons)
-            vDSP_mmul(weightMatrixTranspose, 1, workingOutputGradients, 1, &activationGradients, 1, vDSP_Length(outputNeurons), 1, vDSP_Length(inputNeurons))
+            vDSP_mmul(weightMatrixTranspose, 1, workingOutputGradients, 1, &activationGradients, 1, vDSP_Length(inputNeurons), 1, vDSP_Length(outputNeurons))
             // Calculate the derivative of the hyperbolic tangent activation function for the outputs of the preceding layer
             // The derivative of tanh(x) is 1 - (tanh(x) ^ 2), and tanh(x) has already been calculated; it is the activation corresponding to each output
             // This means the derivative of the activation with respect to the output is just 1 minus the square of the activation
@@ -211,6 +211,6 @@ public struct NeuralNetwork {
 }
 
 var nn = NeuralNetwork(layers: [4, 3, 2])
-print(nn.infer(inputs: [[0, 0, 0, 0]]))
-nn.train(inputs: [[0, 0, 0, 0]], groundTruths: [[3, 3]], epochs: 1, learningRate: 0.001)
-print(nn.infer(inputs: [[0, 0, 0, 0]]))
+print("initial:", nn.infer(inputs: [[0, 0, 0, 0]]))
+nn.train(inputs: [[0, 0, 0, 0]], groundTruths: [[3, 3]], epochs: 1000, learningRate: 0.01)
+print("final:", nn.infer(inputs: [[0, 0, 0, 0]]))
