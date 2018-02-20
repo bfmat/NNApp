@@ -1,7 +1,7 @@
 import Accelerate
 
 // A structure that builds a neural network given hyperparameters and can run training and inference
-public struct NeuralNetwork {
+struct NeuralNetwork {
     // An array of arrays containing the floating-point weights of the network
     private var weightMatrices: [[Float]]
     // An array of tuples containing the shapes of the weight matrices
@@ -9,7 +9,7 @@ public struct NeuralNetwork {
     
     // Initializer accepts an array whose length is equivalent to the number of layers and whose values represent the number of neurons in the corresponding layers; the beginning of the array is the input layer and the end is the output layer
     // A value that tells the network whether or not to include a bias unit in each of the layers is also provided; this bias unit is not included in the number of neurons for each layer
-    public init(layers: [Int]) {
+    init(layers: [Int]) {
         // Create mutable lists to add all of the weight matrices and their shapes to
         var weightMatrices = [[Float]]()
         var weightMatrixShapes = [(Int, Int)]()
@@ -37,7 +37,7 @@ public struct NeuralNetwork {
     }
     
     // Run forward propagation and reshape the output so it can be used
-    public func infer(inputs: [[Float]]) -> [[Float]] {
+    func infer(inputs: [[Float]]) -> [[Float]] {
         // Prepare the inputs and run forward propagation, taking the outputs for the last layer only
         let inputsPrepared = flattenAndTranspose(inputs)
         let numExamples = inputs.count
@@ -108,7 +108,7 @@ public struct NeuralNetwork {
     }
     
     // Train the neural network, provided inputs, ground truth outputs, and other training parameters
-    public mutating func train(inputs: [[Float]], groundTruths: [[Float]], epochs: Int, learningRate: Float) {
+    mutating func train(inputs: [[Float]], groundTruths: [[Float]], epochs: Int, learningRate: Float) {
         // Prepare the input values for forward propagation
         let inputsFlat = flattenAndTranspose(inputs)
         // Transpose and flatten the ground truths for backpropagation
