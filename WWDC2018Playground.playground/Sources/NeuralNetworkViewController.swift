@@ -22,11 +22,8 @@ public class NeuralNetworkViewController : UIViewController {
     
     // Run when the view is loaded
     public override func loadView() {
-        // Create the view and set the background color
-        let view = UIView()
-        view.backgroundColor = .black
-        // Set the view to be active in the current view controller
-        self.view = view
+        // Create the view and set it as active in the current view controller
+        view = UIView()
         // Update the network with the default values
         updateNetwork()
     }
