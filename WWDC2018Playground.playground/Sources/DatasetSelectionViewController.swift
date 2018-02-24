@@ -11,6 +11,9 @@ public class DatasetSelectionViewController : UIViewController {
     
     // Run when the view is loaded
     public override func loadView() {
+        // Load all of the datasets into the array so they can be used
+        Dataset.loadDatasets()
+        
         // Create the view and set the background color
         self.view = UIView()
         view.backgroundColor = .white
@@ -37,10 +40,10 @@ public class DatasetSelectionViewController : UIViewController {
         let alertController = UIAlertController(title: "Choose a Dataset", message: nil, preferredStyle: .actionSheet)
         // Create a cancel action which will not change the dataset
         alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        // For each of the datasets to choose from
-        for dataset in [Dataset.housePrices, Dataset.politicalPreferences] {
+        // For each of the available datasets
+        for dataset in Dataset.datasets {
             // Add an action that sets the currently chosen dataset
-            let action = UIAlertAction(title: dataset.rawValue, style: .default) { _ in
+            let action = UIAlertAction(title: dataset.description, style: .default) { _ in
                 self.chosenDatasetOrNil = dataset
                 // Update the button text with the newly selected dataset
                 self.updateButtonText()
@@ -57,7 +60,7 @@ public class DatasetSelectionViewController : UIViewController {
         let buttonText: String
         // If a dataset has been chosen, show its name on the button
         if let chosenDataset = chosenDatasetOrNil {
-            buttonText = "Chosen Dataset: \(chosenDataset.rawValue)"
+            buttonText = "Chosen Dataset: \(chosenDataset.description)"
         }
         // Otherwise, encourage the user to choose a dataset
         else {
@@ -65,11 +68,5 @@ public class DatasetSelectionViewController : UIViewController {
         }
         // Set the text on the button
         datasetButton.setTitle(buttonText, for: .normal)
-    }
-    
-    // An enumeration of the available datasets, with an attached description string
-    private enum Dataset: String {
-        case housePrices = "House Prices"
-        case politicalPreferences = "Political Preferences"
     }
 }
