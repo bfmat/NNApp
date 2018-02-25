@@ -24,16 +24,15 @@ class VisualNeuron : UIView {
         }
     }
     
-    // Required initializer that sets the position and radius to 0, fading in for 1 second
+    // Required initializer that sets the position on both axes and radius to 0, fading in immediately
     required convenience init(coder: NSCoder) {
-        self.init(at: CGPoint.zero, radius: 0, fadeDuration: 1)
+        self.init(at: CGPoint.zero, radius: 0, fadeDuration: 0)
     }
     
     // Move this neuron and its attached weights to a position over a period of time
     func move(to position: CGPoint, withDuration duration: TimeInterval) {
-        // Animate all movements over the provided duration
+        // Move the center of this view to the provided position over the provided duration
         UIView.animate(withDuration: duration) {
-            // Move the center of this view to the provided position
             self.center = position
         }
     }
