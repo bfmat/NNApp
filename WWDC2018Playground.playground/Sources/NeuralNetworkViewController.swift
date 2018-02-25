@@ -3,29 +3,16 @@ import UIKit
 // The view controller that displays the neurons and weights of a neural network
 public class NeuralNetworkViewController : UIViewController {
     
-    // Radius of the circles that represent the neurons, in points
-    let neuronRadius = 10
+    // The dataset used to train this neural network
+    public typealias Dataset = (inputElements: Int, outputElements: Int, contents: [(input: [Float], groundTruth: [Float])])
+    public var dataset: Dataset! = (8, 5, [])
+    // The hidden layers that will be compatible with any dataset
+    public var hiddenLayers: [Int]! = [2]
     
     // The neural network represented by this view controller
     private var neuralNetwork: NeuralNetwork? = nil
-    
-    // When either the dataset or the hidden layers are changed, overwrite the network and its visual representation
-    // The dataset used to train this neural network
-    typealias Dataset = (inputElements: Int, outputElements: Int, contents: [(input: [Float], groundTruth: [Float])])
-    var dataset: Dataset! = (8, 5, []) {
-        didSet {
-            overwriteNetwork()
-        }
-    }
-    // The hidden layers that will be compatible with any dataset
-    var hiddenLayers: [Int]! = [2] {
-        didSet {
-            overwriteNetwork()
-        }
-    }
-    
     // The graphical representations of neurons
-    private var neurons = [UIView]()
+    private var neurons = [VisualNeuron]()
     // The lines that connect each pair of neurons, representing weights
     private var weights = [UIView]()
     
@@ -42,12 +29,13 @@ public class NeuralNetworkViewController : UIViewController {
     }
     
     // Overwrite the neural network with the global dataset and hidden layers and rearrange the graphical representation
-    private func overwriteNetwork() {
+    public func overwriteNetwork() {
         // Combine the hidden layers with the input and output layers
         let allLayers = [dataset.inputElements] + hiddenLayers + [dataset.outputElements]
         // Create a new network with the provided layers
         neuralNetwork = NeuralNetwork(layers: allLayers)
-        
+        // Get the number of neurons going into this transition
+        let previousNumNeurons = neurons.count
         // The numbers of spaces between the layers, and of spaces between the maximum number of neurons in a layer, are one greater than the actual numbers of layers and neurons
         // The maximum number of neurons is used because every layer must be spaced equally, and smaller layers will be narrower
         let numLayers = allLayers.count
@@ -63,25 +51,34 @@ public class NeuralNetworkViewController : UIViewController {
             // Iterate over the number of neurons in this layer
             let numNeuronsInLayer = allLayers[layerIndex]
             for neuronIndex in 0..<numNeuronsInLayer {
-                // Create a neuron view and set its side length to the diameter of the circle
-                let neuron = UIView()
-                let neuronDiameter = neuronRadius * 2
-                neuron.frame.size = CGSize(width: neuronDiameter, height: neuronDiameter)
-                // Set the rounded corner radius to the radius of the neuron, so that it is actually a circle
-                neuron.layer.cornerRadius = CGFloat(neuronRadius)
-                neuron.clipsToBounds = true
                 // Calculate the vertical position of this neuron by dividing the neuron index by the number of neuron spaces and adding 1, so that the first neuron is one space away from the left side and the last neuron is one space away from the right side
                 let numNeuronSpacesInLayer = numNeuronsInLayer + 1
                 let offsetNeuronSpaceIndex = CGFloat(neuronIndex) - (CGFloat(numNeuronSpacesInLayer) / 2) + 1
                 let horizontalPosition = (offsetNeuronSpaceIndex * distanceBetweenNeurons) + (view.bounds.width / 2)
                 // Position the neuron using the computed horizontal position and the vertical position of this layer
                 let neuronPosition = CGPoint(x: horizontalPosition, y: verticalPosition)
-                neuron.center = neuronPosition
-                // Set the color of the neuron to black (temporary)
-                neuron.backgroundColor = .black
-                // Add the finished neuron to the neural network view
-                view.addSubview(neuron)
+                // Calculate the index of this neuron within the entire network by adding up all previous layers and the current neuron index
+                let neuronIndexInNetwork = allLayers[..<layerIndex].reduce(0, +) + neuronIndex
+                // If the index of this neuron is within the number of neurons there were in the view going into this transition
+                if neuronIndexInNetwork < previousNumNeurons {
+                    // Animate the center of the neuron with this index to the new position over a period of 1 second
+                    UIView.animate(withDuration: 1) {
+                        self.neurons[neuronIndexInNetwork].center = neuronPosition
+                    }
+                } else {
+                    // Create a neuron view with a radius of 10
+                    let neuron = VisualNeuron(at: neuronPosition, radius: 10)
+                    // Add the finished neuron to the global array, and to the neural network view
+                    neurons.append(neuron)
+                    view.addSubview(neuron)
+                }
             }
         }
+        // Remove all neurons in the global array past the number in the new network
+        let currentNumNeurons = allLayers.reduce(0, +)
+        for oldNeuron in neurons[currentNumNeurons...] {
+            oldNeuron.removeFromSuperview()
+        }
+        neurons = Array(neurons[0..<currentNumNeurons])
     }
 }

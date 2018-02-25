@@ -41,7 +41,7 @@ private class MainViewController : UIViewController {
         // Register the mode update function to be run when the mode is changed
         modeSegmentedControl.addTarget(self, action: #selector(onModeUpdate), for: .valueChanged)
         // Update the mode immediately so that the train view is loaded by default
-        onModeUpdate()
+        // onModeUpdate()
         
         // The data selection view should be below the segmented control
         datasetSelectionViewController = DatasetSelectionViewController()
@@ -67,6 +67,10 @@ private class MainViewController : UIViewController {
         // Enable or disable the train and test views accordingly
         trainViewController.view.isHidden = !inTestMode
         testViewController.view.isHidden = inTestMode
+        // Update the dataset and hidden layer (temporary)
+        neuralNetworkViewController.dataset = (3, 1, [])
+        neuralNetworkViewController.hiddenLayers = [5, 3]
+        neuralNetworkViewController.overwriteNetwork()
     }
 }
 
