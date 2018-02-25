@@ -3,6 +3,11 @@ import UIKit
 // The view controller that displays the neurons and weights of a neural network
 public class NeuralNetworkViewController : UIViewController {
     
+    // The duration over which the neurons fade in and out
+    private let fadeDuration: TimeInterval = 1
+    // The duration over which the neurons animate to new positions
+    private let moveDuration: TimeInterval = 1.5
+    
     // The dataset used to train this neural network
     public typealias Dataset = (inputElements: Int, outputElements: Int, contents: [(input: [Float], groundTruth: [Float])])
     public var dataset: Dataset! = (8, 5, [])
@@ -61,13 +66,11 @@ public class NeuralNetworkViewController : UIViewController {
                 let neuronIndexInNetwork = allLayers[..<layerIndex].reduce(0, +) + neuronIndex
                 // If the index of this neuron is within the number of neurons there were in the view going into this transition
                 if neuronIndexInNetwork < previousNumNeurons {
-                    // Animate the center of the neuron with this index to the new position over a period of 1 second
-                    UIView.animate(withDuration: 1) {
-                        self.neurons[neuronIndexInNetwork].center = neuronPosition
-                    }
+                    // Animate the center of the neuron with this index to the new position
+                    self.neurons[neuronIndexInNetwork].move(to: neuronPosition, withDuration: moveDuration)
                 } else {
                     // Create a neuron view with a radius of 10
-                    let neuron = VisualNeuron(at: neuronPosition, radius: 10)
+                    let neuron = VisualNeuron(at: neuronPosition, radius: 10, fadeDuration: fadeDuration)
                     // Add the finished neuron to the global array, and to the neural network view
                     neurons.append(neuron)
                     view.addSubview(neuron)
@@ -77,7 +80,8 @@ public class NeuralNetworkViewController : UIViewController {
         // Remove all neurons in the global array past the number in the new network
         let currentNumNeurons = allLayers.reduce(0, +)
         for oldNeuron in neurons[currentNumNeurons...] {
-            oldNeuron.removeFromSuperview()
+            oldNeuron.fadeOut(withDuration: fadeDuration)
+//            oldNeuron.removeFromSuperview()
         }
         neurons = Array(neurons[0..<currentNumNeurons])
     }

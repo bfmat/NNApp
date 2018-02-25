@@ -69,7 +69,7 @@ private class MainViewController : UIViewController {
         testViewController.view.isHidden = inTestMode
         // Update the dataset and hidden layer (temporary)
         neuralNetworkViewController.dataset = (3, 1, [])
-        neuralNetworkViewController.hiddenLayers = [5, 3]
+        neuralNetworkViewController.hiddenLayers = [10, 10]
         neuralNetworkViewController.overwriteNetwork()
     }
 }
