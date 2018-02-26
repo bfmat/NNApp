@@ -18,8 +18,8 @@ public class NeuralNetworkViewController : UIViewController {
     private var neuralNetwork: NeuralNetwork? = nil
     // The graphical representations of neurons
     private var neurons = [VisualNeuron]()
-    // The lines that connect each pair of neurons, representing weights
-    private var weights = [UIView]()
+    // The lines that connect each pair of neurons, representing weights; organized into sub-arrays each containing the weights that start at a specific layer, so there are one less sub-arrays than there are layers in the network
+    private var weights = [[UIView]]()
     
     // Run when the view is loaded
     public override func loadView() {
@@ -35,6 +35,12 @@ public class NeuralNetworkViewController : UIViewController {
     
     // Overwrite the neural network with the global dataset and hidden layers and rearrange the graphical representation
     public func overwriteNetwork() {
+        // Remove all of the weights; they are re-created after every change
+        for layerWeights in weights {
+            for weight in layerWeights {
+                weight.fadeOut(withDuration: fadeDuration)
+            }
+        }
         // Combine the hidden layers with the input and output layers
         let allLayers = [dataset.inputElements] + hiddenLayers + [dataset.outputElements]
         // Create a new network with the provided layers
@@ -77,12 +83,26 @@ public class NeuralNetworkViewController : UIViewController {
                 }
             }
         }
-        // Remove all neurons in the global array past the number in the new network
+        // Remove all neurons in the global array past the number in the new network and fade them out
         let currentNumNeurons = allLayers.reduce(0, +)
         for oldNeuron in neurons[currentNumNeurons...] {
             oldNeuron.fadeOut(withDuration: fadeDuration)
-//            oldNeuron.removeFromSuperview()
         }
         neurons = Array(neurons[0..<currentNumNeurons])
+    }
+}
+
+// A local extension to all views that allows them to be faded out
+fileprivate extension UIView {
+    // Fade this view out in a provided period of time and destroy it afterward
+    func fadeOut(withDuration duration: TimeInterval) {
+        // Gradually decrease the opacity of this view to 0 over the provided duration
+        UIView.animate(withDuration: duration) {
+            self.alpha = 0
+        }
+        // Destroy this view after the duration
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+            self.removeFromSuperview()
+        }
     }
 }

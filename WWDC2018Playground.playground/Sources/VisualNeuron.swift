@@ -36,12 +36,4 @@ class VisualNeuron : UIView {
             self.center = position
         }
     }
-    
-    // Fade this neuron out in a provided period of time
-    func fadeOut(withDuration duration: TimeInterval) {
-        // Gradually decrease the opacity of this view to 0 over the provided duration
-        UIView.animate(withDuration: duration) {
-            self.alpha = 0
-        }
-    }
 }
