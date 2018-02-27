@@ -8,11 +8,11 @@ public class NeuralNetworkViewController : UIViewController {
     // The duration over which the neurons animate to new positions
     private let moveDuration: TimeInterval = 1.5
     
-    // The dataset used to train this neural network
+    // The dataset used to train this neural network, initialized to arbitrary values  so the netework can still display
     public typealias Dataset = (inputElements: Int, outputElements: Int, contents: [(input: [Float], groundTruth: [Float])])
-    public var dataset: Dataset! = (8, 5, [])
+    public var dataset: Dataset = (8, 5, [])
     // The hidden layers that will be compatible with any dataset
-    public var hiddenLayers: [Int]! = [2]
+    public var hiddenLayers: [Int] = [2]
     
     // The neural network represented by this view controller
     private var neuralNetwork: NeuralNetwork? = nil
