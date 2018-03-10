@@ -19,7 +19,6 @@ class VisualWeight : CAShapeLayer {
         // Animate the opacity of this layer from 0 to 1 over the provided duration
         let fadeAnimation = CABasicAnimation(keyPath: "opacity")
         fadeAnimation.fromValue = 0
-        fadeAnimation.toValue = 1
         fadeAnimation.duration = fadeDuration
         add(fadeAnimation, forKey: "fadeIn")
         opacity = 1
