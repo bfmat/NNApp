@@ -32,7 +32,7 @@ private class MainViewController : UIViewController {
         // Anchor the neural network view to the top of the screen, and leave space at the bottom of the screen for other controls
         neuralNetworkView.topAnchor.constraint(equalTo: view.topAnchor, constant: uiSpacing).isActive = true
         neuralNetworkView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -300).isActive = true
-        
+
         // Locate the segmented control below the neural network view
         view.addSubview(modeSegmentedControl)
         modeSegmentedControl.topAnchor.constraint(equalTo: neuralNetworkView.bottomAnchor, constant: uiSpacing).isActive = true
@@ -41,10 +41,10 @@ private class MainViewController : UIViewController {
         // Register the mode update function to be run when the mode is changed
         modeSegmentedControl.addTarget(self, action: #selector(onModeUpdate), for: .valueChanged)
         // Update the mode immediately so that the train view is loaded by default
-        // onModeUpdate()
+         onModeUpdate()
         
         // The data selection view should be below the segmented control
-        datasetSelectionViewController = DatasetSelectionViewController()
+        datasetSelectionViewController = DatasetSelectionViewController(setDataset: neuralNetworkViewController.setDataset)
         let datasetSelectionView = datasetSelectionViewController.view!
         view.addSubview(datasetSelectionView)
         datasetSelectionView.topAnchor.constraint(equalTo: modeSegmentedControl.bottomAnchor, constant: uiSpacing).isActive = true
@@ -67,10 +67,6 @@ private class MainViewController : UIViewController {
         // Enable or disable the train and test views accordingly
         trainViewController.view.isHidden = !inTestMode
         testViewController.view.isHidden = inTestMode
-        // Update the dataset and hidden layer (temporary)
-        neuralNetworkViewController.dataset = (3, 1, [])
-        neuralNetworkViewController.hiddenLayers = [10, 10]
-        neuralNetworkViewController.overwriteNetwork()
     }
 }
 

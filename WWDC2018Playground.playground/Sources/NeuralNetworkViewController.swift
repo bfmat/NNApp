@@ -8,12 +8,10 @@ public class NeuralNetworkViewController : UIViewController {
     // The duration over which the neurons animate to new positions
     private let moveDuration: TimeInterval = 1.5
     
-    // The dataset used to train this neural network, initialized to arbitrary values  so the netework can still display
-    public typealias Dataset = (inputElements: Int, outputElements: Int, contents: [(input: [Float], groundTruth: [Float])])
-    public var dataset: Dataset = (8, 5, [])
+    // The currently chosen dataset, which should never be nil except at the very beginning
+    private var chosenDataset: Dataset! = nil
     // The hidden layers that will be compatible with any dataset
-    public var hiddenLayers: [Int] = [2]
-    
+    private var hiddenLayers: [Int] = [2]
     // The neural network represented by this view controller
     private var neuralNetwork: NeuralNetwork? = nil
     // The graphical representations of neurons
@@ -21,20 +19,14 @@ public class NeuralNetworkViewController : UIViewController {
     // The lines that connect each pair of neurons, representing weights; organized into sub-arrays each containing the weights that start at a specific layer, so there are one less sub-arrays than there are layers in the network
     private var weights = [[VisualWeight]]()
     
-    // Run when the view is loaded
-    public override func loadView() {
-        // Create the view and set it as active in the current view controller
-        view = UIView()
-    }
-    
-    // Run after the view is added to its superview and sized according to constraints
-    public override func viewDidAppear(_: Bool) {
-        // Overwrite the network and display it, now that the bounds of the view have been calculated
+    // Set the dataset and overwrite the graphical network
+    public func setDataset(_ dataset: Dataset) {
+        chosenDataset = dataset
         overwriteNetwork()
     }
     
     // Overwrite the neural network with the global dataset and hidden layers and rearrange the graphical representation
-    public func overwriteNetwork() {
+    private func overwriteNetwork() {
         // Remove all of the weights; they are re-created after every change
         for layerWeights in weights {
             for weight in layerWeights {
@@ -42,7 +34,7 @@ public class NeuralNetworkViewController : UIViewController {
             }
         }
         // Combine the hidden layers with the input and output layers
-        let allLayers = [dataset.inputElements] + hiddenLayers + [dataset.outputElements]
+        let allLayers = [chosenDataset.inputElements] + hiddenLayers + [chosenDataset.outputElements]
         // Create a new network with the provided layers
         neuralNetwork = NeuralNetwork(layers: allLayers)
         // Get the number of neurons going into this transition

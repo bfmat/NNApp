@@ -3,11 +3,21 @@ import UIKit
 // The view controller that contains a text box that uses a picker view for input; it is used to select the dataset that will be used for training or testing
 public class DatasetSelectionViewController : UIViewController {
     
-    // The currently chosen dataset, which starts at nil (representing that no dataset is chosen)
-    private var chosenDatasetOrNil: Dataset? = nil
-    
     // The button that allows the user to select which dataset to train or test the network with
     private let datasetButton = UIButton(type: .system)
+    // A function that sets the currently chosen dataset
+    private let setDataset: (Dataset) -> Void
+    
+    // Initializer that accepts a function to set the current dataset
+    public init(setDataset: @escaping (Dataset) -> Void) {
+        self.setDataset = setDataset
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    // Required initializer that puts in place a function that does nothing as the dataset setter
+    public required convenience init(coder _: NSCoder) {
+        self.init(setDataset: { _ in })
+    }
     
     // Run when the view is loaded
     public override func loadView() {
@@ -15,9 +25,8 @@ public class DatasetSelectionViewController : UIViewController {
         Dataset.loadDatasets()
         
         // Create the view and set the background color
-        self.view = UIView()
+        view = UIView()
         view.backgroundColor = .white
-        
         // The dataset button should take up the entire view
         view.addSubview(datasetButton)
         datasetButton.translatesAutoresizingMaskIntoConstraints = false
@@ -27,11 +36,14 @@ public class DatasetSelectionViewController : UIViewController {
         datasetButton.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         // Register the selection function to run when the button is pressed
         datasetButton.addTarget(self, action: #selector(selectDataset), for: UIControlEvents.touchUpInside)
-        // Update the button text immediately
-        updateButtonText()
-        
-        // Set the view to be active in the current view controller
-        self.view = view
+        // Set the button's text, prompting the user to choose a dataset
+        setButtonText("Choose a Dataset")
+    }
+    
+    // Run after the view is displayed
+    public override func viewDidAppear(_: Bool) {
+        // Choose the first dataset by default
+        setDataset(Dataset.datasets.first!)
     }
     
     // Run when the selection button is pressed
@@ -44,9 +56,10 @@ public class DatasetSelectionViewController : UIViewController {
         for dataset in Dataset.datasets {
             // Add an action that sets the currently chosen dataset
             let action = UIAlertAction(title: dataset.description, style: .default) { _ in
-                self.chosenDatasetOrNil = dataset
-                // Update the button text with the newly selected dataset
-                self.updateButtonText()
+                // Call the external function that sets the dataset
+                self.setDataset(dataset)
+                // Set the button's text accordingly
+                self.setButtonText("Chosen Dataset: \(dataset.description)")
             }
             alertController.addAction(action)
         }
@@ -54,19 +67,9 @@ public class DatasetSelectionViewController : UIViewController {
         present(alertController, animated: true)
     }
     
-    // Update the button's text based on the chosen dataset
-    private func updateButtonText() {
-        // Create a string to hold the text
-        let buttonText: String
-        // If a dataset has been chosen, show its name on the button
-        if let chosenDataset = chosenDatasetOrNil {
-            buttonText = "Chosen Dataset: \(chosenDataset.description)"
-        }
-        // Otherwise, encourage the user to choose a dataset
-        else {
-            buttonText = "Choose a Dataset"
-        }
-        // Set the text on the button
-        datasetButton.setTitle(buttonText, for: .normal)
+    // Set the button's text with the normal state
+    private func setButtonText(_ text: String) {
+        // Update the button text with the newly selected dataset
+        datasetButton.setTitle(text, for: .normal)
     }
 }

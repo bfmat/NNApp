@@ -1,14 +1,21 @@
 import Foundation
 
 // The structure that contains each dataset, along with a static array that contains all of the available datasets
-struct Dataset {
+public struct Dataset {
     
     // Datasets consist of two-dimensional arrays of floating-point numbers for inputs and ground truths
     let inputs: [[Float]]
     let groundTruths: [[Float]]
-    
     // A description string is attached, as a user-facing name for this dataset
     let description: String
+    
+    // Convenience properties that return the number of elements in each of the inputs and ground truths
+    var inputElements: Int {
+        return inputs.first!.count
+    }
+    var outputElements: Int {
+        return groundTruths.first!.count
+    }
     
     // Static array of all of the available datasets
     static var datasets = [Dataset]()
