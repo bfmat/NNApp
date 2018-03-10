@@ -3,7 +3,7 @@ import UIKit
 // A circular view that represents a neuron in the network, managing its weights when its position is changed
 class VisualNeuron : UIView {
     
-    // Initialize the neuron provided a center position
+    // Fade in the neuron provided a center position
     init(at centerPosition: CGPoint, radius: CGFloat, fadeDuration: TimeInterval) {
         // Calculate the size of the neuron
         let diameter = radius * 2
@@ -29,11 +29,23 @@ class VisualNeuron : UIView {
         self.init(at: CGPoint.zero, radius: 0, fadeDuration: 0)
     }
     
-    // Move this neuron and its attached weights to a position over a period of time
+    // Move this neuron to a position over a period of time
     func move(to position: CGPoint, withDuration duration: TimeInterval) {
         // Move the center of this view to the provided position over the provided duration
         UIView.animate(withDuration: duration) {
             self.center = position
+        }
+    }
+    
+    // Fade out this neuron over a provided period of time, destroying it afterwards
+    func fadeOut(withDuration duration: TimeInterval) {
+        // Gradually decrease the opacity of this view to 0 over the provided duration
+        UIView.animate(withDuration: duration) {
+            self.alpha = 0
+        }
+        // Destroy this view after the duration
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+            self.removeFromSuperview()
         }
     }
 }

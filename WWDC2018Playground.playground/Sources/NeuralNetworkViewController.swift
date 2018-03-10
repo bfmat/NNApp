@@ -3,7 +3,7 @@ import UIKit
 // The view controller that displays the neurons and weights of a neural network
 public class NeuralNetworkViewController : UIViewController {
     
-    // The duration over which the neurons fade in and out
+    // The duration over which the neurons and weights fade in and out
     private let fadeDuration: TimeInterval = 1
     // The duration over which the neurons animate to new positions
     private let moveDuration: TimeInterval = 1.5
@@ -19,7 +19,7 @@ public class NeuralNetworkViewController : UIViewController {
     // The graphical representations of neurons
     private var neurons = [VisualNeuron]()
     // The lines that connect each pair of neurons, representing weights; organized into sub-arrays each containing the weights that start at a specific layer, so there are one less sub-arrays than there are layers in the network
-    private var weights = [[UIView]]()
+    private var weights = [[VisualWeight]]()
     
     // Run when the view is loaded
     public override func loadView() {
@@ -55,12 +55,15 @@ public class NeuralNetworkViewController : UIViewController {
         // Get the spacing in points between the neurons and the layers
         let distanceBetweenNeurons = view.bounds.width / CGFloat(maxNumNeuronSpaces)
         let distanceBetweenLayers = view.bounds.height / CGFloat(numLayerSpaces)
+        // Create an array to hold the positions of the neurons in the previous layer
+        var previousLayerNeuronPositions = [CGPoint]()
         // Iterate over each of the layers, adding them to the view
         for layerIndex in 0..<numLayers {
             // This layer should be vertically positioned based on the number of spaces such that the first layer is one space below the top and the last layer is one space above the bottom
             let verticalPosition = (CGFloat(layerIndex) + 1) * distanceBetweenLayers
-            // Iterate over the number of neurons in this layer
+            // Iterate over the number of neurons in this layer, adding their positions to an array
             let numNeuronsInLayer = allLayers[layerIndex]
+            var currentLayerNeuronPositions = [CGPoint]()
             for neuronIndex in 0..<numNeuronsInLayer {
                 // Calculate the vertical position of this neuron by dividing the neuron index by the number of neuron spaces and adding 1, so that the first neuron is one space away from the left side and the last neuron is one space away from the right side
                 let numNeuronSpacesInLayer = numNeuronsInLayer + 1
@@ -68,6 +71,8 @@ public class NeuralNetworkViewController : UIViewController {
                 let horizontalPosition = (offsetNeuronSpaceIndex * distanceBetweenNeurons) + (view.bounds.width / 2)
                 // Position the neuron using the computed horizontal position and the vertical position of this layer
                 let neuronPosition = CGPoint(x: horizontalPosition, y: verticalPosition)
+                // Add the position to the list of positions for this layer
+                currentLayerNeuronPositions.append(neuronPosition)
                 // Calculate the index of this neuron within the entire network by adding up all previous layers and the current neuron index
                 let neuronIndexInNetwork = allLayers[..<layerIndex].reduce(0, +) + neuronIndex
                 // If the index of this neuron is within the number of neurons there were in the view going into this transition
@@ -81,7 +86,20 @@ public class NeuralNetworkViewController : UIViewController {
                     neurons.append(neuron)
                     view.addSubview(neuron)
                 }
+                // Iterate over the neuron positions in the previous layer, drawing lines between this neuron and the ones in the last layer, and adding the newly created weights to an array
+                var currentLayerWeights = [VisualWeight]()
+                for previousLayerNeuronPosition in previousLayerNeuronPositions {
+                    // Fade in a weight between this neuron and the current one in the previous layer
+                    let weight = VisualWeight(from: neuronPosition, to: previousLayerNeuronPosition, fadeDuration: fadeDuration)
+                    // Add it to the list of weights, and to the current view's layer
+                    currentLayerWeights.append(weight)
+                    view.layer.addSublayer(weight)
+                }
+                // Add the list of weights for this layer to the list of all weights
+                weights.append(currentLayerWeights)
             }
+            // Set the array of neuron positions in the previous layer to the positions of the neurons in this layer
+            previousLayerNeuronPositions = currentLayerNeuronPositions
         }
         // Remove all neurons in the global array past the number in the new network and fade them out
         let currentNumNeurons = allLayers.reduce(0, +)
@@ -89,20 +107,5 @@ public class NeuralNetworkViewController : UIViewController {
             oldNeuron.fadeOut(withDuration: fadeDuration)
         }
         neurons = Array(neurons[0..<currentNumNeurons])
-    }
-}
-
-// A local extension to all views that allows them to be faded out
-fileprivate extension UIView {
-    // Fade this view out in a provided period of time and destroy it afterward
-    func fadeOut(withDuration duration: TimeInterval) {
-        // Gradually decrease the opacity of this view to 0 over the provided duration
-        UIView.animate(withDuration: duration) {
-            self.alpha = 0
-        }
-        // Destroy this view after the duration
-        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
-            self.removeFromSuperview()
-        }
     }
 }
