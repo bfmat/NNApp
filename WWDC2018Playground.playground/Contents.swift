@@ -40,14 +40,20 @@ private class MainViewController : UIViewController {
         modeSegmentedControl.selectedSegmentIndex = 0
         // Register the mode update function to be run when the mode is changed
         modeSegmentedControl.addTarget(self, action: #selector(onModeUpdate), for: .valueChanged)
-        // Update the mode immediately so that the train view is loaded by default
-         onModeUpdate()
         
         // The data selection view should be below the segmented control
         datasetSelectionViewController = DatasetSelectionViewController(setDataset: neuralNetworkViewController.setDataset)
         let datasetSelectionView = datasetSelectionViewController.view!
         view.addSubview(datasetSelectionView)
         datasetSelectionView.topAnchor.constraint(equalTo: modeSegmentedControl.bottomAnchor, constant: uiSpacing).isActive = true
+        
+        // Both the train and test views should be below the dataset selection view
+        for viewController in [trainViewController, testViewController] {
+            let subview = viewController.view!
+            view.addSubview(subview)
+            view.topAnchor.constraint(equalTo: datasetSelectionView.bottomAnchor, constant: uiSpacing).isActive = true
+            view.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -uiSpacing).isActive = true
+        }
         
         // All subviews should be centered; enable autoresizing to constraints and set constraints to the sides of the screen
         for subview in view.subviews {
@@ -56,8 +62,16 @@ private class MainViewController : UIViewController {
             subview.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -uiSpacing).isActive = true
         }
         
+        // Update the mode immediately so that the train view is loaded by default
+        onModeUpdate()
+        
         // Set the view to be active in the current view controller
         self.view = view
+    }
+    
+    public override func viewDidAppear(_ animated: Bool) {
+        print("origin:", trainViewController.view.frame.origin)
+        print("size:", trainViewController.view.frame.size)
     }
     
     // Called when the mode segmented control is updated
@@ -65,8 +79,8 @@ private class MainViewController : UIViewController {
         // Convert the integer index to a Boolean representing whether or not we are in test mode
         let inTestMode = modeSegmentedControl.selectedSegmentIndex != 0
         // Enable or disable the train and test views accordingly
-        trainViewController.view.isHidden = !inTestMode
-        testViewController.view.isHidden = inTestMode
+        trainViewController.view.isHidden = inTestMode
+        testViewController.view.isHidden = !inTestMode
     }
 }
 
