@@ -1,6 +1,6 @@
 import UIKit
 
-// The view controller that displays the neurons and weights of a neural network
+// The view controller that displays the options that can be used when testing a trained neural network
 public class TestViewController : UIViewController {
     
     // Run when the view is loaded

@@ -51,8 +51,8 @@ private class MainViewController : UIViewController {
         for viewController in [trainViewController, testViewController] {
             let subview = viewController.view!
             view.addSubview(subview)
-            view.topAnchor.constraint(equalTo: datasetSelectionView.bottomAnchor, constant: uiSpacing).isActive = true
-            view.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -uiSpacing).isActive = true
+            subview.topAnchor.constraint(equalTo: datasetSelectionView.bottomAnchor, constant: uiSpacing).isActive = true
+            subview.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -uiSpacing).isActive = true
         }
         
         // All subviews should be centered; enable autoresizing to constraints and set constraints to the sides of the screen
@@ -67,11 +67,6 @@ private class MainViewController : UIViewController {
         
         // Set the view to be active in the current view controller
         self.view = view
-    }
-    
-    public override func viewDidAppear(_ animated: Bool) {
-        print("origin:", trainViewController.view.frame.origin)
-        print("size:", trainViewController.view.frame.size)
     }
     
     // Called when the mode segmented control is updated
