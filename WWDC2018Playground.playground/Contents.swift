@@ -3,12 +3,11 @@
 import UIKit
 import PlaygroundSupport
 
-// The amount of space in points to be left around UI elements
-private let uiSpacing: CGFloat = 10
-
 // The view controller that contains the neural network and related controls
 private class MainViewController : UIViewController {
     
+    // The amount of space in points to be left around UI elements
+    private let uiSpacing: CGFloat = 10
     // The neural network view controller that will take up much of the main view
     private let neuralNetworkViewController = NeuralNetworkViewController()
     // The segmented control that allows the user to choose between training and testing modes
@@ -22,7 +21,7 @@ private class MainViewController : UIViewController {
     // Run when the view is loaded
     override func loadView() {
         // Create the view and set its size and background color
-        let view = UIView()
+        view = UIView()
         view.frame = UIScreen.main.bounds
         view.backgroundColor = .white
         
@@ -64,9 +63,6 @@ private class MainViewController : UIViewController {
         
         // Update the mode immediately so that the train view is loaded by default
         onModeUpdate()
-        
-        // Set the view to be active in the current view controller
-        self.view = view
     }
     
     // Called when the mode segmented control is updated

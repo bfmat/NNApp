@@ -13,7 +13,7 @@ public class NeuralNetworkViewController : UIViewController {
     // The hidden layers that will be compatible with any dataset
     private var hiddenLayers: [Int] = [2]
     // The neural network represented by this view controller
-    private var neuralNetwork: NeuralNetwork? = nil
+    private var neuralNetwork: NeuralNetwork! = nil
     // The graphical representations of neurons
     private var neurons = [VisualNeuron]()
     // The lines that connect each pair of neurons, representing weights; organized into sub-arrays each containing the weights that start at a specific layer, so there are one less sub-arrays than there are layers in the network
@@ -23,6 +23,11 @@ public class NeuralNetworkViewController : UIViewController {
     public func setDataset(_ dataset: Dataset) {
         chosenDataset = dataset
         overwriteNetwork()
+    }
+    
+    // Train the neural network with the selected dataset, for a specified number of epochs, and with a specified learning rate
+    func train(epochs: Int, learningRate: Float) {
+        neuralNetwork.train(inputs: chosenDataset.inputs, groundTruths: chosenDataset.groundTruths, epochs: epochs, learningRate: learningRate)
     }
     
     // Overwrite the neural network with the global dataset and hidden layers and rearrange the graphical representation
