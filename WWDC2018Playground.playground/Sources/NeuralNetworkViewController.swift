@@ -29,20 +29,37 @@ public class NeuralNetworkViewController : UIViewController {
     func train(epochs: Int, learningRate: Float) -> DiagnosticTrainingIterator {
         // Get the full training iterator from training the neural network
         let fullTrainingIterator = neuralNetwork.train(inputs: chosenDataset.inputs, groundTruths: chosenDataset.groundTruths, epochs: epochs, learningRate: learningRate)
-        // Turn it into a diagnostic training iterator and return it
-        return DiagnosticTrainingIterator(fullTrainingIterator: fullTrainingIterator)
+        // Turn it into a diagnostic training iterator, with a reference to this view controller, and return it
+        return DiagnosticTrainingIterator(neuralNetworkViewController: self, fullTrainingIterator: fullTrainingIterator)
     }
     
     // Iterates over the full training iterator, hands weights off to be displayed in the neural network view controller, and returns diagnostic data required for display to the user
-    struct DiagnosticTrainingIterator : IteratorProtocol, Sequence {
+    class DiagnosticTrainingIterator : IteratorProtocol, Sequence {
         
+        // A reference to the neural network view controller
+        let neuralNetworkViewController: NeuralNetworkViewController
         // An instance of the full training iterator
         var fullTrainingIterator: NeuralNetwork.FullTrainingIterator
         
+        // An initializer that sets the neural network view controller and training iterator
+        init(neuralNetworkViewController: NeuralNetworkViewController, fullTrainingIterator: NeuralNetwork.FullTrainingIterator) {
+            self.neuralNetworkViewController = neuralNetworkViewController
+            self.fullTrainingIterator = fullTrainingIterator
+        }
+        
         // Iteration function that returns diagnostic data
-        mutating func next() -> Int? {
-            // Get the next value out of the full training iterator, and return it (temporary)
-            return fullTrainingIterator.next()
+        func next() -> Int? {
+            // Get the next value out of the full training iterator, returning nil if the value is nil
+            guard let (epoch, weightMatrices) = fullTrainingIterator.next() else {
+                return nil
+            }
+            // Run UI code in the main thread (this function may be running in a background thread)
+            DispatchQueue.main.async {
+                // Proof of concept UI mutating code
+                self.neuralNetworkViewController.neurons.last!.fadeOut(withDuration: 5)
+            }
+            // Return the epoch number, without the weight matrices
+            return epoch
         }
     }
     

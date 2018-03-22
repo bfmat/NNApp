@@ -148,7 +148,7 @@ class NeuralNetwork {
         }
         
         // Iterator function, which trains for a single epoch and returns associated data
-        mutating func next() -> Int? {
+        mutating func next() -> (epoch: Int, weightMatrices: [[Float]])? {
             // If the number of completed epochs is equal to the total number of epochs, return nil (stopping iteration)
             if pastEpochs == epochs {
                 return nil
@@ -171,8 +171,10 @@ class NeuralNetwork {
             }
             // Increment the number of completed epochs
             pastEpochs += 1
-            // Return one less than the number of past epochs, which is the index of this epoch
-            return pastEpochs - 1
+            // The index of this epoch is one less than the number of past epochs
+            let epoch = pastEpochs - 1
+            // Return the epoch alongside the network's weight matrices
+            return (epoch: epoch, weightMatrices: neuralNetwork.weightMatrices)
         }
     }
     
