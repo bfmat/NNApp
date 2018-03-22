@@ -1,7 +1,8 @@
 import Accelerate
 
 // A structure that builds a neural network given hyperparameters and can run training and inference
-struct NeuralNetwork {
+class NeuralNetwork {
+    
     // An array of arrays containing the floating-point weights of the network
     private var weightMatrices: [[Float]]
     // An array of tuples containing the shapes of the weight matrices
@@ -39,7 +40,7 @@ struct NeuralNetwork {
     // Run forward propagation and reshape the output so it can be used
     func infer(inputs: [[Float]]) -> [[Float]] {
         // Prepare the inputs and run forward propagation, taking the outputs for the last layer only
-        let inputsPrepared = flattenAndTranspose(inputs)
+        let inputsPrepared = NeuralNetwork.flattenAndTranspose(inputs)
         let numExamples = inputs.count
         let outputsSingleDimensional = forwardPropagate(inputsSingleDimensional: inputsPrepared, numExamples: numExamples).outputs.last!
         // Transpose the final working output so that it can be divided into output arrays for each example
@@ -61,7 +62,7 @@ struct NeuralNetwork {
     }
     
     // Transpose and flatten a two-dimensional matrix in preparation for forward or back propagation
-    private func flattenAndTranspose(_ matrix: [[Float]]) -> [Float] {
+    private static func flattenAndTranspose(_ matrix: [[Float]]) -> [Float] {
         // Append each of the arrays to a single-dimensional array
         let matrixFlat = matrix.reduce([], +)
         // Transpose the single-dimensional array so it can be used in matrix multiplications
@@ -107,19 +108,53 @@ struct NeuralNetwork {
         return (outputs, activations)
     }
     
-    // Train the neural network, provided inputs, ground truth outputs, and other training parameters
-    mutating func train(inputs: [[Float]], groundTruths: [[Float]], epochs: Int, learningRate: Float) {
-        // Prepare the input values for forward propagation
-        let inputsFlat = flattenAndTranspose(inputs)
-        // Transpose and flatten the ground truths for backpropagation
-        let groundTruthsFlat = flattenAndTranspose(groundTruths)
-        // Get the number of examples and length of the output for each example
-        let numExamples = groundTruths.count
-        let outputExampleLength = groundTruths[0].count
-        // Repeat the training loop for each epoch
-        for _ in 0..<epochs {
+    // Train the neural network, provided inputs, ground truth outputs, and other training parameters; this function returns an iterable sequence
+    func train(inputs: [[Float]], groundTruths: [[Float]], epochs: Int, learningRate: Float) -> FullTrainingIterator {
+        // Return a training iterator with the provided parameters, and a reference to this neural network
+        return FullTrainingIterator(inputs: inputs, groundTruths: groundTruths, epochs: epochs, learningRate: learningRate, neuralNetwork: self)
+    }
+    
+    // An iterator that runs training and returns weight matrices and other data for each epoch
+    struct FullTrainingIterator : IteratorProtocol {
+        
+        // Training parameters (the number of epochs and the learning rate)
+        private let epochs: Int
+        private let learningRate: Float
+        // A reference to the neural network so it can be modified
+        private let neuralNetwork: NeuralNetwork
+        // The flattened matrices of inputs and ground truths
+        private let inputsFlat: [Float]
+        private let groundTruthsFlat: [Float]
+        // The number of examples, and the length of each example
+        private let numExamples: Int
+        private let outputExampleLength: Int
+        
+        // The number of epochs that have been run so far, incremented at the end of the epoch
+        private var pastEpochs = 0
+        
+        // Initializer which prepares the network for training; it also takes a reference to the neural network
+        fileprivate init(inputs: [[Float]], groundTruths: [[Float]], epochs: Int, learningRate: Float, neuralNetwork: NeuralNetwork) {
+            // Set the global variables passed as parameters
+            self.epochs = epochs
+            self.learningRate = learningRate
+            self.neuralNetwork = neuralNetwork
+            // Prepare the input values for forward propagation
+            inputsFlat = flattenAndTranspose(inputs)
+            // Transpose and flatten the ground truths for backpropagation
+            groundTruthsFlat = flattenAndTranspose(groundTruths)
+            // Remember the dimensions of the example matrices, because they are saved only as single-dimensional arrays
+            numExamples = groundTruths.count
+            outputExampleLength = groundTruths[0].count
+        }
+        
+        // Iterator function, which trains for a single epoch and returns associated data
+        mutating func next() -> Int? {
+            // If the number of completed epochs is equal to the total number of epochs, return nil (stopping iteration)
+            if pastEpochs == epochs {
+                return nil
+            }
             // Run forward propagation to compute outputs and activations for each layer in the network
-            let (outputs, activations) = forwardPropagate(inputsSingleDimensional: inputsFlat, numExamples: inputs.count)
+            let (outputs, activations) = neuralNetwork.forwardPropagate(inputsSingleDimensional: inputsFlat, numExamples: numExamples)
             // Get the outputs for the last layer, which are the hypotheses for the given training examples
             let hypothesesFlat = outputs.last!
             // Subtract the hypotheses from the ground truths to get a flat matrix of errors
@@ -132,8 +167,12 @@ struct NeuralNetwork {
                 // Slice the array of errors to get the errors for this example only
                 let exampleErrors = Array(errorsExampleOrdered[exampleIndex..<exampleIndex + outputExampleLength])
                 // Run back propagation with the errors for this example, outputs and activations for all layers, and provided learning rate
-                backPropagate(errors: exampleErrors, activations: activations, learningRate: learningRate)
+                neuralNetwork.backPropagate(errors: exampleErrors, activations: activations, learningRate: learningRate)
             }
+            // Increment the number of completed epochs
+            pastEpochs += 1
+            // Return one less than the number of past epochs, which is the index of this epoch
+            return pastEpochs - 1
         }
     }
     
@@ -148,7 +187,7 @@ struct NeuralNetwork {
     }
     
     // Subtract one single-dimensional floating-point matrix from another
-    private func subtractMatrices(_ array0: [Float], from array1: [Float]) -> [Float] {
+    private static func subtractMatrices(_ array0: [Float], from array1: [Float]) -> [Float] {
         // Multiply the first array by -1 and add it to the second array
         let numValues = array0.count
         var negativeArray0 = [Float](repeating: 0, count: numValues)
@@ -160,7 +199,7 @@ struct NeuralNetwork {
     }
     
     // Run back propagation and update the weights of the network provided a single error vector for the last layer, the outputs and activations of each layer of the network, and the learning rate
-    private mutating func backPropagate(errors: [Float], activations: [[Float]], learningRate: Float) {
+    private func backPropagate(errors: [Float], activations: [[Float]], learningRate: Float) {
         // Create an array of output gradients to update for each layer, initialized with the errors for the last layer
         var workingOutputGradients = errors
         // Iterate backwards over the indices of the weight matrices, not including the very first one

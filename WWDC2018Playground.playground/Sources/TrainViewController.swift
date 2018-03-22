@@ -13,13 +13,31 @@ public class TrainViewController : UIViewController {
     private let minLearningRateExponent: Float = -5
     private let maxLearningRateExponent: Float = -2
     
+    // The view controller that handles selection of the dataset used for training and testing
+    private var datasetSelectionViewController: DatasetSelectionViewController!
     // The labels that show the selected number of epochs, and the learning rate
     private let epochsLabel = UILabel()
     private let learningRateLabel = UILabel()
     // The sliders that are used to input the number of epochs to train for, and the learning rate
     private let epochsSlider = UISlider()
     private let learningRateSlider = UISlider()
+    // The button that is used to initiate, and display epoch information for, the training process
+    private let trainButton = UIButton(type: .roundedRect)
     
+    // A reference to the neural network view controller, so training can be initiated and monitored
+    private let neuralNetworkViewController: NeuralNetworkViewController!
+    
+    // The main initializer, which sets the global reference to the neural network view controller
+    public init(neuralNetworkViewController: NeuralNetworkViewController) {
+        self.neuralNetworkViewController = neuralNetworkViewController
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    // A storyboard initializer that sets the neural network view controller to nil
+    public required init?(coder _: NSCoder) {
+        neuralNetworkViewController = nil
+        super.init(nibName: nil, bundle: nil)
+    }
     
     // Run when the view is loaded
     public override func loadView() {
@@ -27,6 +45,8 @@ public class TrainViewController : UIViewController {
         view = UIView()
         view.backgroundColor = .white
         
+        // The dataset selector needs to be able to change the variable in the neural network view controller
+        datasetSelectionViewController = DatasetSelectionViewController(setDataset: neuralNetworkViewController.setDataset)
         // Configure the epochs slider with a linear value
         epochsSlider.minimumValue = minEpochs
         epochsSlider.maximumValue = maxEpochs
@@ -36,14 +56,13 @@ public class TrainViewController : UIViewController {
         // Update the labels when the sliders are changed
         epochsSlider.addTarget(self, action: #selector(updateEpochsLabel), for: .valueChanged)
         learningRateSlider.addTarget(self, action: #selector(updateLearningRateLabel), for: .valueChanged)
-        // Configure the button that is tapped to initiate the training process
-        let trainButton = UIButton(type: .roundedRect)
+        // Configure the training button
         trainButton.setTitle("Start Training", for: .normal)
-        trainButton.addTarget(self, action: #selector(train), for: .touchUpInside)
+        trainButton.addTarget(self, action: #selector(startTraining), for: .touchUpInside)
         
         // Iterate over all UI elements that should be stacked, creating an accumulator to hold the bottom anchor of the view above
         var lastVerticalAnchor = view.topAnchor
-        for element in [epochsLabel, epochsSlider, learningRateLabel, learningRateSlider, trainButton] {
+        for element in [datasetSelectionViewController.view!, epochsLabel, epochsSlider, learningRateLabel, learningRateSlider, trainButton] {
             // Add the element to the view
             view.addSubview(element)
             // Constrain the current element to stack against the last anchor, and extend a predefined distance below it
@@ -59,6 +78,10 @@ public class TrainViewController : UIViewController {
         }
     }
     
+    // Accessor for the number of epochs, as an integer
+    private var epochs: Int {
+        return Int(epochsSlider.value)
+    }
     // Accessor for the base 10 exponentiated learning rate value
     private var learningRate: Float {
         return pow(10, learningRateSlider.value)
@@ -66,14 +89,21 @@ public class TrainViewController : UIViewController {
     
     // Functions which will update the text in the labels based on the values of the sliders
     @objc private func updateEpochsLabel() {
-        epochsLabel.text = "Epochs: \(epochsSlider.value)"
+        epochsLabel.text = "Epochs: \(epochs)"
     }
     @objc private func updateLearningRateLabel() {
-        learningRateLabel.text = "Epochs: \(learningRate)"
+        learningRateLabel.text = "Learning rate: \(learningRate)"
     }
     
     // Run when the train button is pressed
-    @objc private func train() {
-        print("train")
+    @objc private func startTraining() {
+        // Run training on a background thread so the interface is not locked up
+        DispatchQueue.global(qos: .background).async {
+            // Train the neural network with the selected number of epochs and learning rate, iterating over it to get diagnostic data
+            for diagnosticData in self.neuralNetworkViewController.train(epochs: self.epochs, learningRate: self.learningRate) {
+                // Output the epoch number (temporary)
+                print(diagnosticData)
+            }
+        }
     }
 }

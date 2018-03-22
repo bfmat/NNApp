@@ -25,9 +25,25 @@ public class NeuralNetworkViewController : UIViewController {
         overwriteNetwork()
     }
     
-    // Train the neural network with the selected dataset, for a specified number of epochs, and with a specified learning rate
-    func train(epochs: Int, learningRate: Float) {
-        neuralNetwork.train(inputs: chosenDataset.inputs, groundTruths: chosenDataset.groundTruths, epochs: epochs, learningRate: learningRate)
+    // Train the neural network with the selected dataset, for a specified number of epochs, and with a specified learning rate; can be iterated over for diagnostic data
+    func train(epochs: Int, learningRate: Float) -> DiagnosticTrainingIterator {
+        // Get the full training iterator from training the neural network
+        let fullTrainingIterator = neuralNetwork.train(inputs: chosenDataset.inputs, groundTruths: chosenDataset.groundTruths, epochs: epochs, learningRate: learningRate)
+        // Turn it into a diagnostic training iterator and return it
+        return DiagnosticTrainingIterator(fullTrainingIterator: fullTrainingIterator)
+    }
+    
+    // Iterates over the full training iterator, hands weights off to be displayed in the neural network view controller, and returns diagnostic data required for display to the user
+    struct DiagnosticTrainingIterator : IteratorProtocol, Sequence {
+        
+        // An instance of the full training iterator
+        var fullTrainingIterator: NeuralNetwork.FullTrainingIterator
+        
+        // Iteration function that returns diagnostic data
+        mutating func next() -> Int? {
+            // Get the next value out of the full training iterator, and return it (temporary)
+            return fullTrainingIterator.next()
+        }
     }
     
     // Overwrite the neural network with the global dataset and hidden layers and rearrange the graphical representation

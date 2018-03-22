@@ -12,11 +12,20 @@ private class MainViewController : UIViewController {
     private let neuralNetworkViewController = NeuralNetworkViewController()
     // The segmented control that allows the user to choose between training and testing modes
     private let modeSegmentedControl = UISegmentedControl(items: ["Train", "Test"])
-    // The view controller that handles selection of the dataset used for training and testing
-    private var datasetSelectionViewController: DatasetSelectionViewController!
     // The mode-specific views that are displayed below the dataset selection view and display settings and information for training and testing
-    private let trainViewController = TrainViewController()
+    private let trainViewController: TrainViewController
     private let testViewController = TestViewController()
+    
+    // Initialize the train view controller, which requires a reference to the neural network view controller
+    init() {
+        trainViewController = TrainViewController(neuralNetworkViewController: neuralNetworkViewController)
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    // Required storyboard initializer that simply calls the main initializer
+    required convenience init(coder _: NSCoder) {
+        self.init()
+    }
     
     // Run when the view is loaded
     override func loadView() {
@@ -40,17 +49,13 @@ private class MainViewController : UIViewController {
         // Register the mode update function to be run when the mode is changed
         modeSegmentedControl.addTarget(self, action: #selector(onModeUpdate), for: .valueChanged)
         
-        // The data selection view should be below the segmented control
-        datasetSelectionViewController = DatasetSelectionViewController(setDataset: neuralNetworkViewController.setDataset)
-        let datasetSelectionView = datasetSelectionViewController.view!
-        view.addSubview(datasetSelectionView)
-        datasetSelectionView.topAnchor.constraint(equalTo: modeSegmentedControl.bottomAnchor, constant: uiSpacing).isActive = true
         
-        // Both the train and test views should be below the dataset selection view
+        
+        // Both the train and test views should be below the mode selector
         for viewController in [trainViewController, testViewController] {
             let subview = viewController.view!
             view.addSubview(subview)
-            subview.topAnchor.constraint(equalTo: datasetSelectionView.bottomAnchor, constant: uiSpacing).isActive = true
+            subview.topAnchor.constraint(equalTo: modeSegmentedControl.bottomAnchor, constant: uiSpacing).isActive = true
             subview.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -uiSpacing).isActive = true
         }
         
