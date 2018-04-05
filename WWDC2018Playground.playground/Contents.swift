@@ -49,8 +49,6 @@ private class MainViewController : UIViewController {
         // Register the mode update function to be run when the mode is changed
         modeSegmentedControl.addTarget(self, action: #selector(onModeUpdate), for: .valueChanged)
         
-        
-        
         // Both the train and test views should be below the mode selector
         for viewController in [trainViewController, testViewController] {
             let subview = viewController.view!
