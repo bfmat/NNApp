@@ -10,7 +10,7 @@ public class NeuralNetworkViewController : UIViewController {
     
     // The currently chosen dataset, which should never be nil except at the very beginning
     private var chosenDataset: Dataset! = nil
-    // The hidden layers that will be compatible with any dataset
+    // Numbers of neurons in the hidden layers that will be compatible with any dataset (numbers exclude bias units)
     private var hiddenLayers: [Int] = [2]
     // The neural network represented by this view controller
     private var neuralNetwork: NeuralNetwork! = nil
@@ -71,8 +71,8 @@ public class NeuralNetworkViewController : UIViewController {
                 weight.fadeOut(withDuration: fadeDuration)
             }
         }
-        // Combine the hidden layers with the input and output layers
-        let allLayers = [chosenDataset.inputElements] + hiddenLayers + [chosenDataset.outputElements]
+        // Combine the hidden layers with the input and output layers, adding one to the number of input elements and the hidden layers to represent bias units
+        let allLayers = [chosenDataset.inputElements + 1] + hiddenLayers.map {$0 + 1} + [chosenDataset.outputElements]
         // Create a new network with the provided layers
         neuralNetwork = NeuralNetwork(layers: allLayers)
         // Get the number of neurons going into this transition
@@ -116,17 +116,20 @@ public class NeuralNetworkViewController : UIViewController {
                     neurons.append(neuron)
                     view.addSubview(neuron)
                 }
-                // Iterate over the neuron positions in the previous layer, drawing lines between this neuron and the ones in the last layer, and adding the newly created weights to an array
-                var currentLayerWeights = [VisualWeight]()
-                for previousLayerNeuronPosition in previousLayerNeuronPositions {
-                    // Fade in a weight between this neuron and the current one in the previous layer
-                    let weight = VisualWeight(from: neuronPosition, to: previousLayerNeuronPosition, fadeDuration: fadeDuration)
-                    // Add it to the list of weights, and to the current view's layer
-                    currentLayerWeights.append(weight)
-                    view.layer.addSublayer(weight)
+                // Draw weights unless this is the first neuron in the layer (which is a bias unit) and it is not the output layer (which does not have a bias unit)
+                if !(neuronIndex == 0 && layerIndex != numLayers - 1) {
+                    // Iterate over the neuron positions in the previous layer, drawing lines between this neuron and the ones in the last layer, and adding the newly created weights to an array
+                    var currentLayerWeights = [VisualWeight]()
+                    for previousLayerNeuronPosition in previousLayerNeuronPositions {
+                        // Fade in a weight between this neuron and the current one in the previous layer
+                        let weight = VisualWeight(from: neuronPosition, to: previousLayerNeuronPosition, fadeDuration: fadeDuration)
+                        // Add it to the list of weights, and to the current view's layer
+                        currentLayerWeights.append(weight)
+                        view.layer.addSublayer(weight)
+                    }
+                    // Add the list of weights for this layer to the list of all weights
+                    weights.append(currentLayerWeights)
                 }
-                // Add the list of weights for this layer to the list of all weights
-                weights.append(currentLayerWeights)
             }
             // Set the array of neuron positions in the previous layer to the positions of the neurons in this layer
             previousLayerNeuronPositions = currentLayerNeuronPositions

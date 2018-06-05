@@ -27,20 +27,23 @@ private class MainViewController : UIViewController {
         self.init()
     }
     
-    // Run when the view is loaded
+    // Run to create the main view
     override func loadView() {
         // Create the view and set its size and background color
         view = UIView()
         view.frame = UIScreen.main.bounds
         view.backgroundColor = .white
-        
+    }
+    
+    // Run after the view is created to set up the UI
+    override func viewDidLoad() {
         // Add the neural network view to the current view
         let neuralNetworkView = neuralNetworkViewController.view!
-        view.addSubview(neuralNetworkViewController.view)
+        view.addSubview(neuralNetworkView)
         // Anchor the neural network view to the top of the screen, and leave space at the bottom of the screen for other controls
         neuralNetworkView.topAnchor.constraint(equalTo: view.topAnchor, constant: uiSpacing).isActive = true
         neuralNetworkView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -300).isActive = true
-
+        
         // Locate the segmented control below the neural network view
         view.addSubview(modeSegmentedControl)
         modeSegmentedControl.topAnchor.constraint(equalTo: neuralNetworkView.bottomAnchor, constant: uiSpacing).isActive = true
