@@ -55,8 +55,14 @@ public class NeuralNetworkViewController : UIViewController {
             }
             // Run UI code in the main thread (this function may be running in a background thread)
             DispatchQueue.main.async {
-                // Proof of concept UI mutating code
-                self.neuralNetworkViewController.neurons.last!.fadeOut(withDuration: 5)
+                // Iterate over the weight matrices and corresponding sets of visual weights
+                for (weightMatrix, visualWeights) in zip(weightMatrices, self.neuralNetworkViewController.weights) {
+                    // Iterate over each weight value and corresponding visual weight; these correspond as one would expect, since the weights are grouped together by input neuron both in the weight matrix and the visual weight array
+                    for (weightValue, visualWeight) in zip(weightMatrix, visualWeights) {
+                        // Set the strength of the visual weight according to the weight value
+                        visualWeight.setStrength(weightValue)
+                    }
+                }
             }
             // Return the epoch number, without the weight matrices
             return epoch
@@ -72,16 +78,17 @@ public class NeuralNetworkViewController : UIViewController {
             }
         }
         // Combine the hidden layers with the input and output layers, adding one to the number of input elements and the hidden layers to represent bias units
-        let allLayers = [chosenDataset.inputElements + 1] + hiddenLayers.map {$0 + 1} + [chosenDataset.outputElements]
-        // Create a new network with the provided layers
-        neuralNetwork = NeuralNetwork(layers: allLayers)
+        let layersWithoutBias = [chosenDataset.inputElements] + hiddenLayers + [chosenDataset.outputElements]
+        let layersWithBias = layersWithoutBias.prefix(layersWithoutBias.count - 1).map {$0 + 1} + [layersWithoutBias.last!]
+        // Create a new network with the original layer numbers (the network handles bias internally)
+        neuralNetwork = NeuralNetwork(layers: layersWithoutBias)
         // Get the number of neurons going into this transition
         let previousNumNeurons = neurons.count
         // The numbers of spaces between the layers, and of spaces between the maximum number of neurons in a layer, are one greater than the actual numbers of layers and neurons
         // The maximum number of neurons is used because every layer must be spaced equally, and smaller layers will be narrower
-        let numLayers = allLayers.count
+        let numLayers = layersWithBias.count
         let numLayerSpaces = numLayers + 1
-        let maxNumNeuronSpaces = allLayers.max()!
+        let maxNumNeuronSpaces = layersWithBias.max()!
         // Get the spacing in points between the neurons and the layers
         let distanceBetweenNeurons = view.bounds.width / CGFloat(maxNumNeuronSpaces)
         let distanceBetweenLayers = view.bounds.height / CGFloat(numLayerSpaces)
@@ -91,8 +98,10 @@ public class NeuralNetworkViewController : UIViewController {
         for layerIndex in 0..<numLayers {
             // This layer should be vertically positioned based on the number of spaces such that the first layer is one space below the top and the last layer is one space above the bottom
             let verticalPosition = (CGFloat(layerIndex) + 1) * distanceBetweenLayers
+            // Create an array for the neurons in this layer
+            var currentLayerWeights = [VisualWeight]()
             // Iterate over the number of neurons in this layer, adding their positions to an array
-            let numNeuronsInLayer = allLayers[layerIndex]
+            let numNeuronsInLayer = layersWithBias[layerIndex]
             var currentLayerNeuronPositions = [CGPoint]()
             for neuronIndex in 0..<numNeuronsInLayer {
                 // Calculate the vertical position of this neuron by dividing the neuron index by the number of neuron spaces and adding 1, so that the first neuron is one space away from the left side and the last neuron is one space away from the right side
@@ -104,7 +113,7 @@ public class NeuralNetworkViewController : UIViewController {
                 // Add the position to the list of positions for this layer
                 currentLayerNeuronPositions.append(neuronPosition)
                 // Calculate the index of this neuron within the entire network by adding up all previous layers and the current neuron index
-                let neuronIndexInNetwork = allLayers[..<layerIndex].reduce(0, +) + neuronIndex
+                let neuronIndexInNetwork = layersWithBias[..<layerIndex].reduce(0, +) + neuronIndex
                 // If the index of this neuron is within the number of neurons there were in the view going into this transition
                 if neuronIndexInNetwork < previousNumNeurons {
                     // Animate the center of the neuron with this index to the new position
@@ -118,8 +127,7 @@ public class NeuralNetworkViewController : UIViewController {
                 }
                 // Draw weights unless this is the first neuron in the layer (which is a bias unit) and it is not the output layer (which does not have a bias unit)
                 if !(neuronIndex == 0 && layerIndex != numLayers - 1) {
-                    // Iterate over the neuron positions in the previous layer, drawing lines between this neuron and the ones in the last layer, and adding the newly created weights to an array
-                    var currentLayerWeights = [VisualWeight]()
+                    // Iterate over the neuron positions in the previous layer, drawing lines between this neuron and the ones in the last layer
                     for previousLayerNeuronPosition in previousLayerNeuronPositions {
                         // Fade in a weight between this neuron and the current one in the previous layer
                         let weight = VisualWeight(from: neuronPosition, to: previousLayerNeuronPosition, fadeDuration: fadeDuration)
@@ -127,15 +135,17 @@ public class NeuralNetworkViewController : UIViewController {
                         currentLayerWeights.append(weight)
                         view.layer.addSublayer(weight)
                     }
-                    // Add the list of weights for this layer to the list of all weights
-                    weights.append(currentLayerWeights)
                 }
+            }
+            // Add the list of weights for this layer to the list of all weights, if we are not on the first layer (which has no previous layer to add weights connecting to)
+            if (layerIndex != 0) {
+                weights.append(currentLayerWeights)
             }
             // Set the array of neuron positions in the previous layer to the positions of the neurons in this layer
             previousLayerNeuronPositions = currentLayerNeuronPositions
         }
         // Remove all neurons in the global array past the number in the new network and fade them out
-        let currentNumNeurons = allLayers.reduce(0, +)
+        let currentNumNeurons = layersWithBias.reduce(0, +)
         for oldNeuron in neurons[currentNumNeurons...] {
             oldNeuron.fadeOut(withDuration: fadeDuration)
         }

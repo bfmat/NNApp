@@ -102,7 +102,7 @@ public class TrainViewController : UIViewController {
             // Train the neural network with the selected number of epochs and learning rate, iterating over it to get diagnostic data
             for diagnosticData in self.neuralNetworkViewController.train(epochs: self.epochs, learningRate: self.learningRate) {
                 // Output the epoch number (temporary)
-                print(diagnosticData)
+                print("Epoch: \(diagnosticData)")
             }
         }
     }

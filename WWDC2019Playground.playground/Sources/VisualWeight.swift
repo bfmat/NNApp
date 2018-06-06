@@ -29,6 +29,11 @@ class VisualWeight : CAShapeLayer {
         self.init(from: CGPoint.zero, to: CGPoint.zero, fadeDuration: 0)
     }
     
+    // Necessary initializer inherited from CALayer which calls the superclass initializer
+    override init(layer: Any) {
+        super.init(layer: layer)
+    }
+    
     // Fade out this weight over a provided period of time, destroying it afterwards
     func fadeOut(withDuration duration: TimeInterval) {
         // Animate the opacity of this layer to 0 over the provided duration
@@ -40,5 +45,19 @@ class VisualWeight : CAShapeLayer {
         DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
             self.removeFromSuperlayer()
         }
+    }
+    
+    // Set the opacity of this weight according to a numeric strength value
+    func setStrength(_ value: Float) {
+        // Set it to a sigmoid function of the weight value, which is bounded between 0 and 1
+        opacity = sigmoid(value)
+    }
+    
+    // A sigmoid function which is equal to the hyperbolic tangent, squished into the range of 0 to 1
+    private func sigmoid(_ value: Float) -> Float {
+        // Use Core Graphics to calculate the hyperbolic tangent of this value
+        let hyperbolicTangent = Float(tanh(CGFloat(value)))
+        // Add 1 (to shift it into the range of 0 to 2) and then divide by 2 (which results in the appropriate range)
+        return (hyperbolicTangent + 1) / 2
     }
 }
