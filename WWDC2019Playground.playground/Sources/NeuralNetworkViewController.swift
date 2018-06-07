@@ -53,15 +53,12 @@ public class NeuralNetworkViewController : UIViewController {
             guard let (epoch, weightMatrices) = fullTrainingIterator.next() else {
                 return nil
             }
-            // Run UI code in the main thread (this function may be running in a background thread)
-            DispatchQueue.main.async {
-                // Iterate over the weight matrices and corresponding sets of visual weights
-                for (weightMatrix, visualWeights) in zip(weightMatrices, self.neuralNetworkViewController.weights) {
-                    // Iterate over each weight value and corresponding visual weight; these correspond as one would expect, since the weights are grouped together by input neuron both in the weight matrix and the visual weight array
-                    for (weightValue, visualWeight) in zip(weightMatrix, visualWeights) {
-                        // Set the strength of the visual weight according to the weight value
-                        visualWeight.setStrength(weightValue)
-                    }
+            // Iterate over the weight matrices and corresponding sets of visual weights
+            for (weightMatrix, visualWeights) in zip(weightMatrices, self.neuralNetworkViewController.weights) {
+                // Iterate over each weight value and corresponding visual weight; these correspond as one would expect, since the weights are grouped together by input neuron both in the weight matrix and the visual weight array
+                for (weightValue, visualWeight) in zip(weightMatrix, visualWeights) {
+                    // Set the strength of the visual weight according to the weight value
+                    visualWeight.setStrength(weightValue)
                 }
             }
             // Return the epoch number, without the weight matrices

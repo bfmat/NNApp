@@ -11,7 +11,7 @@ private class MainViewController : UIViewController {
     // The neural network view controller that will take up much of the main view
     private let neuralNetworkViewController = NeuralNetworkViewController()
     // The mode-specific views that are displayed below the dataset selection view and display settings and information
-    private lazy var settingsViewController = SettingsViewController(neuralNetworkViewController: neuralNetworkViewController, architectureAdjustmentViewController: architectureAdjustmentViewController, toggleSettingsOrInformation: toggleSettingsOrInformation)
+    private lazy var settingsViewController = SettingsViewController(neuralNetworkViewController: neuralNetworkViewController, toggleSettingsOrInformation: toggleSettingsOrInformation)
     private let informationViewController = InformationViewController()
     // The view controller that is used to adjust the network's architecture
     private let architectureAdjustmentViewController = ArchitectureAdjustmentViewController()

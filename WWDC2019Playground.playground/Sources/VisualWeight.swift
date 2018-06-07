@@ -47,6 +47,7 @@ class VisualWeight : CAShapeLayer {
     
     // Set the opacity of this weight according to a numeric strength value
     func setStrength(_ value: Float) {
+        opacity = 0
         print(value)
     }
 }

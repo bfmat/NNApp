@@ -35,7 +35,7 @@ public class SettingsViewController : UIViewController {
     private var datasetInitiallySet = false
     
     // The main initializer, which sets the global references to the neural network view controller, architecture adjustment view controller, and the toggle function
-    public init(neuralNetworkViewController: NeuralNetworkViewController, architectureAdjustmentViewController: ArchitectureAdjustmentViewController, toggleSettingsOrInformation: @escaping () -> Void) {
+    public init(neuralNetworkViewController: NeuralNetworkViewController, toggleSettingsOrInformation: @escaping () -> Void) {
         self.neuralNetworkViewController = neuralNetworkViewController
         self.toggleSettingsOrInformation = toggleSettingsOrInformation
         super.init(nibName: nil, bundle: nil)
@@ -121,8 +121,8 @@ public class SettingsViewController : UIViewController {
     
     // Run when the train button is pressed
     @objc private func startTraining() {
-        // Run training on a background thread so the interface is not locked up
-        DispatchQueue.global(qos: .background).async {
+        // Run training asynchronously in the main thread
+        DispatchQueue.main.async {
             // Train the neural network with the selected number of epochs and learning rate, iterating over it to get diagnostic data
             for diagnosticData in self.neuralNetworkViewController.train(epochs: self.epochs, learningRate: self.learningRate) {
                 // Output the epoch number (temporary)
