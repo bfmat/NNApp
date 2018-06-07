@@ -42,22 +42,11 @@ class VisualWeight : CAShapeLayer {
         fadeAnimation.duration = duration
         add(fadeAnimation, forKey: "fadeOut")
         // Destroy this view after the duration
-        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
-            self.removeFromSuperlayer()
-        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration, execute: removeFromSuperlayer)
     }
     
     // Set the opacity of this weight according to a numeric strength value
     func setStrength(_ value: Float) {
-        // Set it to a sigmoid function of the weight value, which is bounded between 0 and 1
-        opacity = sigmoid(value)
-    }
-    
-    // A sigmoid function which is equal to the hyperbolic tangent, squished into the range of 0 to 1
-    private func sigmoid(_ value: Float) -> Float {
-        // Use Core Graphics to calculate the hyperbolic tangent of this value
-        let hyperbolicTangent = Float(tanh(CGFloat(value)))
-        // Add 1 (to shift it into the range of 0 to 2) and then divide by 2 (which results in the appropriate range)
-        return (hyperbolicTangent + 1) / 2
+        print(value)
     }
 }

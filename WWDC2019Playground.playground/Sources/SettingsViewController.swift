@@ -31,6 +31,9 @@ public class SettingsViewController : UIViewController {
     // A reference to the function that toggles the visibility of the settings and information views
     private let toggleSettingsOrInformation: (() -> Void)!
     
+    // A flag that is only true after the dataset is set during initialization
+    private var datasetInitiallySet = false
+    
     // The main initializer, which sets the global references to the neural network view controller, architecture adjustment view controller, and the toggle function
     public init(neuralNetworkViewController: NeuralNetworkViewController, architectureAdjustmentViewController: ArchitectureAdjustmentViewController, toggleSettingsOrInformation: @escaping () -> Void) {
         self.neuralNetworkViewController = neuralNetworkViewController
@@ -51,8 +54,19 @@ public class SettingsViewController : UIViewController {
         view = UIView()
         view.backgroundColor = .white
         
-        // The dataset selector needs to be able to change the variable in the neural network view controller
-        datasetSelectionViewController = DatasetSelectionViewController(setDataset: neuralNetworkViewController.setDataset)
+        // The dataset selector needs to be able to change the variable in the neural network view controller; when it does, it should also enable the training button
+        datasetSelectionViewController = DatasetSelectionViewController { dataset in
+            // The first time this is run, it should set the flag to true but not enable the training button
+            if !self.datasetInitiallySet {
+                self.datasetInitiallySet = true
+            }
+            // Otherwise, it should enable the training button
+            else {
+                self.trainButton.isEnabled = true
+            }
+            // Either way, configure the dataset
+            self.neuralNetworkViewController.setDataset(dataset)
+        }
         // Configure the epochs slider with a linear value
         epochsSlider.minimumValue = minEpochs
         epochsSlider.maximumValue = maxEpochs
@@ -62,8 +76,10 @@ public class SettingsViewController : UIViewController {
         // Update the labels when the sliders are changed
         epochsSlider.addTarget(self, action: #selector(updateEpochsLabel), for: .valueChanged)
         learningRateSlider.addTarget(self, action: #selector(updateLearningRateLabel), for: .valueChanged)
-        // Configure the training button
+        // Configure the training button, disabled by default
         trainButton.setTitle("Start Training", for: .normal)
+        trainButton.setTitle("Please Select a Dataset to Start Training", for: .disabled)
+        trainButton.isEnabled = false
         trainButton.addTarget(self, action: #selector(startTraining), for: .touchUpInside)
         // Set the title of the architecture adjustment button
         architectureButton.setTitle("Change Network Architecture", for: .normal)
