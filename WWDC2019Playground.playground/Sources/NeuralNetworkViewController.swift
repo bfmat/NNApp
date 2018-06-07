@@ -74,6 +74,8 @@ public class NeuralNetworkViewController : UIViewController {
                 weight.fadeOut(withDuration: fadeDuration)
             }
         }
+        // Clear the list of weights (new weights will be added immediately)
+        weights = []
         // Combine the hidden layers with the input and output layers, adding one to the number of input elements and the hidden layers to represent bias units
         let layersWithoutBias = [chosenDataset.inputElements] + hiddenLayers + [chosenDataset.outputElements]
         let layersWithBias = layersWithoutBias.prefix(layersWithoutBias.count - 1).map {$0 + 1} + [layersWithoutBias.last!]
