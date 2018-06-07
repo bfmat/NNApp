@@ -55,6 +55,7 @@ public class NeuralNetworkViewController : UIViewController {
             }
             // Run UI code in the main thread (this function may be running in a background thread)
             DispatchQueue.main.async {
+                print(self.neuralNetworkViewController.weights.count)
                 // Iterate over the weight matrices and corresponding sets of visual weights
                 for (weightMatrix, visualWeights) in zip(weightMatrices, self.neuralNetworkViewController.weights) {
                     // Iterate over each weight value and corresponding visual weight; these correspond as one would expect, since the weights are grouped together by input neuron both in the weight matrix and the visual weight array
@@ -77,6 +78,8 @@ public class NeuralNetworkViewController : UIViewController {
                 weight.fadeOut(withDuration: fadeDuration)
             }
         }
+        // Clear the list of weights (new weights will be added immediately)
+        weights = []
         // Combine the hidden layers with the input and output layers, adding one to the number of input elements and the hidden layers to represent bias units
         let layersWithoutBias = [chosenDataset.inputElements] + hiddenLayers + [chosenDataset.outputElements]
         let layersWithBias = layersWithoutBias.prefix(layersWithoutBias.count - 1).map {$0 + 1} + [layersWithoutBias.last!]
