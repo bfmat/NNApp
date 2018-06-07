@@ -1,7 +1,7 @@
 import UIKit
 
 // The view controller that displays the options that can be used while training a neural network
-public class TrainViewController : UIViewController {
+public class SettingsViewController : UIViewController {
     
     // The width and height of the title labels
     private let titleWidth: CGFloat = 120
@@ -26,16 +26,20 @@ public class TrainViewController : UIViewController {
     
     // A reference to the neural network view controller, so training can be initiated and monitored
     private let neuralNetworkViewController: NeuralNetworkViewController!
+    // A reference to the function that toggles the visibility of the settings and information views
+    private let toggleSettingsOrInformation: (() -> Void)!
     
-    // The main initializer, which sets the global reference to the neural network view controller
-    public init(neuralNetworkViewController: NeuralNetworkViewController) {
+    // The main initializer, which sets the global references to the neural network view controller and the toggle function
+    public init(neuralNetworkViewController: NeuralNetworkViewController, toggleSettingsOrInformation: @escaping () -> Void) {
         self.neuralNetworkViewController = neuralNetworkViewController
+        self.toggleSettingsOrInformation = toggleSettingsOrInformation
         super.init(nibName: nil, bundle: nil)
     }
     
-    // A storyboard initializer that sets the neural network view controller to nil
+    // A storyboard initializer that sets the neural network view controller and toggle function to nil
     public required init?(coder _: NSCoder) {
         neuralNetworkViewController = nil
+        toggleSettingsOrInformation = nil
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -105,5 +109,7 @@ public class TrainViewController : UIViewController {
                 print("Epoch: \(diagnosticData)")
             }
         }
+        // Toggle the activity of this view, switching to the information view
+        toggleSettingsOrInformation()
     }
 }

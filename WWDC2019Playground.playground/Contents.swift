@@ -10,19 +10,16 @@ private class MainViewController : UIViewController {
     private let uiSpacing: CGFloat = 10
     // The neural network view controller that will take up much of the main view
     private let neuralNetworkViewController = NeuralNetworkViewController()
-    // The segmented control that allows the user to choose between training and testing modes
-    private let modeSegmentedControl = UISegmentedControl(items: ["Train", "Test"])
-    // The mode-specific views that are displayed below the dataset selection view and display settings and information for training and testing
-    private let trainViewController: TrainViewController
-    private let testViewController = TestViewController()
+    // The mode-specific views that are displayed below the dataset selection view and display settings and information
+    private lazy var settingsViewController = SettingsViewController(neuralNetworkViewController: neuralNetworkViewController, toggleSettingsOrInformation: toggleSettingsOrInformation)
+    private let informationViewController = InformationViewController()
     
-    // Initialize the train view controller, which requires a reference to the neural network view controller
+    // Blank initializer that calls up to the superclass
     init() {
-        trainViewController = TrainViewController(neuralNetworkViewController: neuralNetworkViewController)
         super.init(nibName: nil, bundle: nil)
     }
     
-    // Required storyboard initializer that simply calls the main initializer
+    // Required storyboard initializer that calls the main initializer
     required convenience init(coder _: NSCoder) {
         self.init()
     }
@@ -44,21 +41,15 @@ private class MainViewController : UIViewController {
         neuralNetworkView.topAnchor.constraint(equalTo: view.topAnchor, constant: uiSpacing).isActive = true
         neuralNetworkView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -300).isActive = true
         
-        // Locate the segmented control below the neural network view
-        view.addSubview(modeSegmentedControl)
-        modeSegmentedControl.topAnchor.constraint(equalTo: neuralNetworkView.bottomAnchor, constant: uiSpacing).isActive = true
-        // Set train as the default option
-        modeSegmentedControl.selectedSegmentIndex = 0
-        // Register the mode update function to be run when the mode is changed
-        modeSegmentedControl.addTarget(self, action: #selector(onModeUpdate), for: .valueChanged)
-        
-        // Both the train and test views should be below the mode selector
-        for viewController in [trainViewController, testViewController] {
+        // Both the settings and information views should be below the neural network view
+        for viewController in [settingsViewController, informationViewController] {
             let subview = viewController.view!
             view.addSubview(subview)
-            subview.topAnchor.constraint(equalTo: modeSegmentedControl.bottomAnchor, constant: uiSpacing).isActive = true
+            subview.topAnchor.constraint(equalTo: neuralNetworkView.bottomAnchor, constant: uiSpacing).isActive = true
             subview.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -uiSpacing).isActive = true
         }
+        // The information view should be hidden by default
+        informationViewController.view.isHidden = true
         
         // All subviews should be centered; enable autoresizing to constraints and set constraints to the sides of the screen
         for subview in view.subviews {
@@ -66,18 +57,14 @@ private class MainViewController : UIViewController {
             subview.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: uiSpacing).isActive = true
             subview.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -uiSpacing).isActive = true
         }
-        
-        // Update the mode immediately so that the train view is loaded by default
-        onModeUpdate()
     }
     
-    // Called when the mode segmented control is updated
-    @objc private func onModeUpdate() {
-        // Convert the integer index to a Boolean representing whether or not we are in test mode
-        let inTestMode = modeSegmentedControl.selectedSegmentIndex != 0
-        // Enable or disable the train and test views accordingly
-        trainViewController.view.isHidden = inTestMode
-        testViewController.view.isHidden = !inTestMode
+    // Called to switch between the settings and information view controllers
+    func toggleSettingsOrInformation() {
+        // One of the two should always be hidden; switch which one it is
+        let settingsViewHidden = settingsViewController.view.isHidden
+        settingsViewController.view.isHidden = !settingsViewHidden
+        informationViewController.view.isHidden = settingsViewHidden
     }
 }
 

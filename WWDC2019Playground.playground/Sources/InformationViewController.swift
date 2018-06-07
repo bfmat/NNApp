@@ -1,7 +1,7 @@
 import UIKit
 
-// The view controller that displays the options that can be used when testing a trained neural network
-public class TestViewController : UIViewController {
+// The view that displays information that is relevant while the neural network is training
+public class InformationViewController : UIViewController {
     
     // Run when the view is loaded
     public override func loadView() {
