@@ -21,22 +21,24 @@ public class SettingsViewController : UIViewController {
     // The sliders that are used to input the number of epochs to train for, and the learning rate
     private let epochsSlider = UISlider()
     private let learningRateSlider = UISlider()
-    // The button that is used to initiate, and display epoch information for, the training process
+    // The button that is used to initiate the training process
     private let trainButton = UIButton(type: .roundedRect)
+    // The button that is used to open the architecture adjustment view
+    public let architectureButton = UIButton(type: .roundedRect)
     
     // A reference to the neural network view controller, so training can be initiated and monitored
     private let neuralNetworkViewController: NeuralNetworkViewController!
     // A reference to the function that toggles the visibility of the settings and information views
     private let toggleSettingsOrInformation: (() -> Void)!
     
-    // The main initializer, which sets the global references to the neural network view controller and the toggle function
-    public init(neuralNetworkViewController: NeuralNetworkViewController, toggleSettingsOrInformation: @escaping () -> Void) {
+    // The main initializer, which sets the global references to the neural network view controller, architecture adjustment view controller, and the toggle function
+    public init(neuralNetworkViewController: NeuralNetworkViewController, architectureAdjustmentViewController: ArchitectureAdjustmentViewController, toggleSettingsOrInformation: @escaping () -> Void) {
         self.neuralNetworkViewController = neuralNetworkViewController
         self.toggleSettingsOrInformation = toggleSettingsOrInformation
         super.init(nibName: nil, bundle: nil)
     }
     
-    // A storyboard initializer that sets the neural network view controller and toggle function to nil
+    // A storyboard initializer that sets the view controllers and toggle function to nil
     public required init?(coder _: NSCoder) {
         neuralNetworkViewController = nil
         toggleSettingsOrInformation = nil
@@ -63,10 +65,12 @@ public class SettingsViewController : UIViewController {
         // Configure the training button
         trainButton.setTitle("Start Training", for: .normal)
         trainButton.addTarget(self, action: #selector(startTraining), for: .touchUpInside)
+        // Set the title of the architecture adjustment button
+        architectureButton.setTitle("Change Network Architecture", for: .normal)
         
         // Iterate over all UI elements that should be stacked, creating an accumulator to hold the bottom anchor of the view above
         var lastVerticalAnchor = view.topAnchor
-        for element in [datasetSelectionViewController.view!, epochsLabel, epochsSlider, learningRateLabel, learningRateSlider, trainButton] {
+        for element in [datasetSelectionViewController.view!, architectureButton, epochsLabel, epochsSlider, learningRateLabel, learningRateSlider, trainButton] {
             // Add the element to the view
             view.addSubview(element)
             // Constrain the current element to stack against the last anchor, and extend a predefined distance below it

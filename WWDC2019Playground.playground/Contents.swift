@@ -11,8 +11,10 @@ private class MainViewController : UIViewController {
     // The neural network view controller that will take up much of the main view
     private let neuralNetworkViewController = NeuralNetworkViewController()
     // The mode-specific views that are displayed below the dataset selection view and display settings and information
-    private lazy var settingsViewController = SettingsViewController(neuralNetworkViewController: neuralNetworkViewController, toggleSettingsOrInformation: toggleSettingsOrInformation)
+    private lazy var settingsViewController = SettingsViewController(neuralNetworkViewController: neuralNetworkViewController, architectureAdjustmentViewController: architectureAdjustmentViewController, toggleSettingsOrInformation: toggleSettingsOrInformation)
     private let informationViewController = InformationViewController()
+    // The view controller that is used to adjust the network's architecture
+    private let architectureAdjustmentViewController = ArchitectureAdjustmentViewController()
     
     // Blank initializer that calls up to the superclass
     init() {
@@ -57,14 +59,22 @@ private class MainViewController : UIViewController {
             subview.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: uiSpacing).isActive = true
             subview.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -uiSpacing).isActive = true
         }
+        
+        // Register the architecture adjustment button
+        settingsViewController.architectureButton.addTarget(self, action: #selector(presentArchitectureAdjustmentView), for: .touchUpInside)
     }
     
     // Called to switch between the settings and information view controllers
-    func toggleSettingsOrInformation() {
+    private func toggleSettingsOrInformation() {
         // One of the two should always be hidden; switch which one it is
         let settingsViewHidden = settingsViewController.view.isHidden
         settingsViewController.view.isHidden = !settingsViewHidden
         informationViewController.view.isHidden = settingsViewHidden
+    }
+    
+    // Called to modally present the architecture adjustment view
+    @objc func presentArchitectureAdjustmentView() {
+        present(architectureAdjustmentViewController, animated: true, completion: nil)
     }
 }
 
