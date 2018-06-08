@@ -121,8 +121,8 @@ public class SettingsViewController : UIViewController {
     
     // Run when the train button is pressed
     @objc private func startTraining() {
-        // Run training asynchronously in the main thread
-        DispatchQueue.main.async {
+        // Run training in a background thread so it does not lock up the user interface
+        DispatchQueue.global(qos: .utility).async {
             // Train the neural network with the selected number of epochs and learning rate, iterating over it to get diagnostic data
             for diagnosticData in self.neuralNetworkViewController.train(epochs: self.epochs, learningRate: self.learningRate) {
                 // Output the epoch number (temporary)
