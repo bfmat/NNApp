@@ -148,11 +148,16 @@ class NeuralNetwork {
         }
         
         // Iterator function, which trains for a single epoch and returns associated data
-        mutating func next() -> (epoch: Int, weightMatrices: [[Float]])? {
+        mutating func next() -> (epoch: Int, weightMatrices: [[Float]], averageActivations: [[Float]])? {
             // If the number of completed epochs is equal to the total number of epochs, return nil (stopping iteration)
             if pastEpochs == epochs {
                 return nil
             }
+            // Increment the number of completed epochs
+            pastEpochs += 1
+            // The index of this epoch is one less than the number of past epochs
+            let epoch = pastEpochs - 1
+            
             // Run forward propagation to compute outputs and activations for each layer in the network
             let (outputs, activations) = neuralNetwork.forwardPropagate(inputsSingleDimensional: inputsFlat, numExamples: numExamples)
             // Get the outputs for the last layer, which are the hypotheses for the given training examples
@@ -169,12 +174,33 @@ class NeuralNetwork {
                 // Run back propagation with the errors for this example, outputs and activations for all layers, and provided learning rate
                 neuralNetwork.backPropagate(errors: exampleErrors, activations: activations, learningRate: learningRate)
             }
-            // Increment the number of completed epochs
-            pastEpochs += 1
-            // The index of this epoch is one less than the number of past epochs
-            let epoch = pastEpochs - 1
-            // Return the epoch alongside the network's weight matrices
-            return (epoch: epoch, weightMatrices: neuralNetwork.weightMatrices)
+            
+            // Iterate over the activation matrices for each layer, adding the average activations to an array
+            var averageActivations = [[Float]]()
+            for layerActivationsFlat in activations {
+                // Transpose the flat matrix of errors so it can be divided up into training examples
+                let numLayerActivationsAllExamples = layerActivationsFlat.count
+                var layerActivationsExampleOrdered = [Float](repeating: 0, count: numLayerActivationsAllExamples)
+                let numLayerActivationsOneExample = numLayerActivationsAllExamples / numExamples
+                vDSP_mtrans(layerActivationsFlat, 1, &layerActivationsExampleOrdered, 1, vDSP_Length(numExamples), vDSP_Length(numLayerActivationsOneExample))
+                // Create an accumulator to add the activations for all training examples to
+                var totalActivations = [Float](repeating: 0, count: numLayerActivationsOneExample)
+                // Iterate over all of the examples
+                for indexOverAllExamples in 0..<numLayerActivationsAllExamples {
+                    // Find the index within a single example that this index corresponds to
+                    let indexWithinOneExample = indexOverAllExamples % numLayerActivationsOneExample
+                    // Add the current activation to the accumulator at the index within a single example
+                    totalActivations[indexWithinOneExample] += layerActivationsExampleOrdered[indexOverAllExamples]
+                }
+                // Divide the accumulator array by the number of examples to get the average activations for this layer, adding it to the array
+                var reciprocalNumExamples = 1 / Float(numExamples)
+                var averageLayerActivations = [Float](repeating: 0, count: numLayerActivationsOneExample)
+                vDSP_vsmul(totalActivations, 1, &reciprocalNumExamples, &averageLayerActivations, 1, vDSP_Length(numLayerActivationsOneExample))
+                averageActivations.append(averageLayerActivations)
+            }
+            
+            // Return the epoch number, the network's weight matrices, and the average activations for each layer
+            return (epoch: epoch, weightMatrices: neuralNetwork.weightMatrices, averageActivations: averageActivations)
         }
     }
     

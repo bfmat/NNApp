@@ -50,9 +50,10 @@ public class NeuralNetworkViewController : UIViewController {
         // Iteration function that returns diagnostic data
         func next() -> Int? {
             // Get the next value out of the full training iterator, returning nil if the value is nil
-            guard let (epoch, weightMatrices) = fullTrainingIterator.next() else {
+            guard let (epoch, weightMatrices, averageActivations) = fullTrainingIterator.next() else {
                 return nil
             }
+            print(averageActivations)
             // Modify the user interface in the main thread (this is run in the background)
             DispatchQueue.main.async {
                 // Iterate over the weight matrices and corresponding sets of visual weights
