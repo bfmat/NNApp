@@ -48,4 +48,9 @@ class VisualNeuron : UIView {
             self.removeFromSuperview()
         }
     }
+    
+    // Set the color of this neuron according to its average activation
+    func setActivation(_ averageActivation: Float) {
+        
+    }
 }

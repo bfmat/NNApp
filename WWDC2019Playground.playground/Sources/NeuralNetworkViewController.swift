@@ -12,6 +12,8 @@ public class NeuralNetworkViewController : UIViewController {
     private var chosenDataset: Dataset! = nil
     // Numbers of neurons in the hidden layers that will be compatible with any dataset (numbers exclude bias units)
     private var hiddenLayers: [Int] = [2]
+    // Used to get all of the layers of the network, not including bias units
+    private var layersWithoutBias: [Int] { return [chosenDataset.inputElements] + hiddenLayers + [chosenDataset.outputElements] }
     // The neural network represented by this view controller
     private var neuralNetwork: NeuralNetwork! = nil
     // The graphical representations of neurons
@@ -64,6 +66,22 @@ public class NeuralNetworkViewController : UIViewController {
                         visualWeight.setStrength(weightValue)
                     }
                 }
+                
+                // Flatten the arrays of average activations for each of the layers into a single array
+                let averageActivationsFlat = averageActivations.reduce([], +)
+                // Iterate over the numbers of neurons in each layer, creating an array of the indices of the bias neurons that should be ignored, starting at 0
+                var biasNeurons = [0]
+                for numNeurons in self.neuralNetworkViewController.layersWithoutBias {
+                    // Skip over the number of neurons in the current layer, and then add one more than that to the list (which corresponds to the first neuron of the next layer)
+                    biasNeurons.append(biasNeurons.last! + numNeurons + 1)
+                }
+                // Copy the list of visual neurons and remove the bias units
+                var visualNeuronsWithoutBias = self.neuralNetworkViewController.neurons
+//                for biasNeuronIndex in biasNeurons {
+//                    visualNeuronsWithoutBias.remove(at: biasNeuronIndex)
+//                }
+//                print(visualNeuronsWithoutBias.count)
+//                print(averageActivationsFlat.count)
             }
             // Return the epoch number, without the weight matrices
             return epoch
@@ -81,7 +99,6 @@ public class NeuralNetworkViewController : UIViewController {
         // Clear the list of weights (new weights will be added immediately)
         weights = []
         // Combine the hidden layers with the input and output layers, adding one to the number of input elements and the hidden layers to represent bias units
-        let layersWithoutBias = [chosenDataset.inputElements] + hiddenLayers + [chosenDataset.outputElements]
         let layersWithBias = layersWithoutBias.prefix(layersWithoutBias.count - 1).map {$0 + 1} + [layersWithoutBias.last!]
         // Create a new network with the original layer numbers (the network handles bias internally)
         neuralNetwork = NeuralNetwork(layers: layersWithoutBias)
