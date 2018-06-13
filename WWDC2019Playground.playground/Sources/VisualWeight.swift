@@ -46,16 +46,10 @@ class VisualWeight : CAShapeLayer {
     }
     
     // Set the color of this weight according to a numeric strength value
-    func setStrength(_ value: Float) {
-        // Calculate the hyperbolic tangent of the value, shifting it up by 1 if it is less than 0 so it can be used in colors
-        let hyperbolicTangent = tanh(CGFloat(value))
-        let lessThanZero = hyperbolicTangent < 0
-        let interpolationDistance = lessThanZero ? hyperbolicTangent + 1 : hyperbolicTangent
-        // If the original value was less than 0, linearly interpolate the stroke and fill colors between red and green; otherwise, between green and blue
-        let inverseInterpolationDistance = 1 - interpolationDistance
-        let uiColor = lessThanZero ? UIColor(red: inverseInterpolationDistance, green: interpolationDistance, blue: 0, alpha: 1) : UIColor(red: 0, green: inverseInterpolationDistance, blue: interpolationDistance, alpha: 1)
-        let cgColor = uiColor.cgColor
-        fillColor = cgColor
-        strokeColor = cgColor
+    func setStrength(_ strength: Float) {
+        // Interpolate the strength between red and blue, converting it to a CGColor, and set the color of this layer accordingly
+        let color = interpolateRedToBlue(strength).cgColor
+        fillColor = color
+        strokeColor = color
     }
 }

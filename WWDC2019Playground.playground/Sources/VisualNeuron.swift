@@ -49,8 +49,11 @@ class VisualNeuron : UIView {
         }
     }
     
-    // Set the color of this neuron according to its average activation
-    func setActivation(_ averageActivation: Float) {
-        
+    // Set the color of this neuron according to a numeric activation value
+    func setActivation(_ activation: Float) {
+        // Divide the activation by a large number because of how large a range it can vary over
+        let reducedActivation = activation / 500
+        // Interpolate the resulting value between red and blue, and set the color of this view accordingly
+        backgroundColor = interpolateRedToBlue(reducedActivation)
     }
 }

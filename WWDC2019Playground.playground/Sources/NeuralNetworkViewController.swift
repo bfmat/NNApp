@@ -55,7 +55,6 @@ public class NeuralNetworkViewController : UIViewController {
             guard let (epoch, weightMatrices, averageActivations) = fullTrainingIterator.next() else {
                 return nil
             }
-            print(averageActivations)
             // Modify the user interface in the main thread (this is run in the background)
             DispatchQueue.main.async {
                 // Iterate over the weight matrices and corresponding sets of visual weights
@@ -70,18 +69,21 @@ public class NeuralNetworkViewController : UIViewController {
                 // Flatten the arrays of average activations for each of the layers into a single array
                 let averageActivationsFlat = averageActivations.reduce([], +)
                 // Iterate over the numbers of neurons in each layer, creating an array of the indices of the bias neurons that should be ignored, starting at 0
+                // Skip the last two layers, because the last layer does not have a bias unit, and there is no layer after it
                 var biasNeurons = [0]
-                for numNeurons in self.neuralNetworkViewController.layersWithoutBias {
+                for numNeurons in self.neuralNetworkViewController.layersWithoutBias[0..<(self.neuralNetworkViewController.layersWithoutBias.count - 2)] {
                     // Skip over the number of neurons in the current layer, and then add one more than that to the list (which corresponds to the first neuron of the next layer)
                     biasNeurons.append(biasNeurons.last! + numNeurons + 1)
                 }
-                // Copy the list of visual neurons and remove the bias units
+                // Copy the list of visual neurons and remove the bias units, iterating in reverse so the indices do not change during iteration
                 var visualNeuronsWithoutBias = self.neuralNetworkViewController.neurons
-//                for biasNeuronIndex in biasNeurons {
-//                    visualNeuronsWithoutBias.remove(at: biasNeuronIndex)
-//                }
-//                print(visualNeuronsWithoutBias.count)
-//                print(averageActivationsFlat.count)
+                for biasNeuronIndex in biasNeurons.reversed() {
+                    visualNeuronsWithoutBias.remove(at: biasNeuronIndex)
+                }
+                // Iterate over each of the non-bias neurons and corresponding average activations, setting the visual appearance of the neurons accordingly
+                for (visualNeuron, averageActivation) in zip(visualNeuronsWithoutBias, averageActivationsFlat) {
+                    visualNeuron.setActivation(averageActivation)
+                }
             }
             // Return the epoch number, without the weight matrices
             return epoch
