@@ -8,8 +8,8 @@ private class MainViewController : UIViewController {
     
     // The amount of space in points to be left around UI elements
     private let uiSpacing: CGFloat = 10
-    // The neural network view controller that will take up much of the main view
-    private let neuralNetworkViewController = NeuralNetworkViewController()
+    // The neural network view controller that will take up much of the main view; provided an accessor for the network's hidden layers
+    private lazy var neuralNetworkViewController = NeuralNetworkViewController(hiddenLayers: architectureAdjustmentViewController.hiddenLayers)
     // The mode-specific views that are displayed below the dataset selection view and display settings and information
     private lazy var settingsViewController = SettingsViewController(neuralNetworkViewController: neuralNetworkViewController, toggleSettingsOrInformation: toggleSettingsOrInformation)
     private let informationViewController = InformationViewController()

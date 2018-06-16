@@ -10,16 +10,32 @@ public class NeuralNetworkViewController : UIViewController {
     
     // The currently chosen dataset, which should never be nil except at the very beginning
     private var chosenDataset: Dataset! = nil
-    // Numbers of neurons in the hidden layers that will be compatible with any dataset (numbers exclude bias units)
-    private var hiddenLayers: [Int] = [2]
+    // Called to get the numbers of neurons in the hidden layers that will be compatible with any dataset (excluding bias units)
+    private var hiddenLayers: (() -> [Int])!
     // Used to get all of the layers of the network, not including bias units
-    private var layersWithoutBias: [Int] { return [chosenDataset.inputElements] + hiddenLayers + [chosenDataset.outputElements] }
+    private var layersWithoutBias: [Int] { return [chosenDataset.inputElements] + hiddenLayers() + [chosenDataset.outputElements] }
     // The neural network represented by this view controller
     private var neuralNetwork: NeuralNetwork! = nil
     // The graphical representations of neurons
     private var neurons = [VisualNeuron]()
     // The lines that connect each pair of neurons, representing weights; organized into sub-arrays each containing the weights that start at a specific layer, so there are one less sub-arrays than there are layers in the network
     private var weights = [[VisualWeight]]()
+    
+    // Initializer which takes a function to get the number of hidden layers, and sets the global variable
+    public convenience init(hiddenLayers: @escaping () -> [Int]) {
+        self.init()
+        self.hiddenLayers = hiddenLayers
+    }
+    
+    // Blank initializer that calls up to the superclass
+    private init() {
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    // Required storyboard initializer that calls the main initializer
+    public required convenience init(coder _: NSCoder) {
+        self.init()
+    }
     
     // Set the dataset and overwrite the graphical network
     public func setDataset(_ dataset: Dataset) {
