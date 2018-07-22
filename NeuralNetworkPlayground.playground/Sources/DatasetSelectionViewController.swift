@@ -35,7 +35,7 @@ public class DatasetSelectionViewController : UIViewController {
         datasetButton.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
         datasetButton.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         // Register the selection function to run when the button is pressed
-        datasetButton.addTarget(self, action: #selector(selectDataset), for: UIControlEvents.touchUpInside)
+        datasetButton.addTarget(self, action: #selector(selectDataset), for: UIControl.Event.touchUpInside)
         // Set the button's text, prompting the user to choose a dataset
         setButtonText("Choose a Dataset")
     }
