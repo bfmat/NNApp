@@ -1,10 +1,15 @@
-//: A Swift Playground designed to teach people about neural networks and allow them to experiment with training and inference
+//
+//  ViewController.swift
+//  NNApp
+//
+//  Created by Brendon Matusch on 2019-07-05.
+//  Copyright © 2019 Brendon Matusch. All rights reserved.
+//
 
 import UIKit
-import PlaygroundSupport
 
 // The view controller that contains the neural network and related controls
-private class MainViewController : UIViewController {
+class MainViewController : UIViewController {
     
     // The amount of space in points to be left around UI elements
     private let uiSpacing: CGFloat = 10
@@ -77,6 +82,3 @@ private class MainViewController : UIViewController {
         present(architectureAdjustmentViewController, animated: true, completion: nil)
     }
 }
-
-// Present the view controller in the Live View window
-PlaygroundPage.current.liveView = MainViewController()

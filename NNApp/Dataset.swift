@@ -25,7 +25,7 @@ public struct Dataset {
         // Iterate over the descriptions and file names of each of the datasets
         for (fileName, description) in [("CaliforniaHousePrices1990", "House Prices")] {
             // Try to get the URL of the CSV data file in the folder of resources
-            let fileURL = Bundle.main.url(forResource: fileName, withExtension: "csv")!
+            let fileURL = Bundle.main.url(forResource: "Data/" + fileName, withExtension: "csv")!
             // Load the contents of the file as a string
             let fileContents = try! String(contentsOf: fileURL)
             // Trim whitespace off of both ends of the file
