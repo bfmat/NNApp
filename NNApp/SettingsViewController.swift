@@ -30,14 +30,17 @@ public class SettingsViewController : UIViewController {
     private let neuralNetworkViewController: NeuralNetworkViewController!
     // A reference to the function that toggles the visibility of the settings and information views
     private let toggleSettingsOrInformation: (() -> Void)!
+    // A reference to the function that is used to update the information view controller with diagnostic information
+    private let setDiagnosticInformation: ((NeuralNetworkViewController.DiagnosticInformation) -> Void)!
     
     // A flag that is only true after the dataset is set during initialization
     private var datasetInitiallySet = false
     
     // The main initializer, which sets the global references to the neural network view controller, architecture adjustment view controller, and the toggle function
-    public init(neuralNetworkViewController: NeuralNetworkViewController, toggleSettingsOrInformation: @escaping () -> Void) {
+    public init(neuralNetworkViewController: NeuralNetworkViewController, toggleSettingsOrInformation: @escaping () -> Void, setDiagnosticInformation: @escaping ((NeuralNetworkViewController.DiagnosticInformation) -> Void)) {
         self.neuralNetworkViewController = neuralNetworkViewController
         self.toggleSettingsOrInformation = toggleSettingsOrInformation
+        self.setDiagnosticInformation = setDiagnosticInformation
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -45,6 +48,7 @@ public class SettingsViewController : UIViewController {
     public required init?(coder _: NSCoder) {
         neuralNetworkViewController = nil
         toggleSettingsOrInformation = nil
+        setDiagnosticInformation = nil
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -121,12 +125,15 @@ public class SettingsViewController : UIViewController {
     
     // Run when the train button is pressed
     @objc private func startTraining() {
+        // Get the number of epochs and the learning rate from UI elements in the main thread
+        let epochs = self.epochs
+        let learningRate = self.learningRate
         // Run training in a background thread so it does not lock up the user interface
         DispatchQueue.global(qos: .utility).async {
             // Train the neural network with the selected number of epochs and learning rate, iterating over it to get diagnostic data
-            for diagnosticData in self.neuralNetworkViewController.train(epochs: self.epochs, learningRate: self.learningRate) {
-                // Output the epoch number (temporary)
-                print("Epoch: \(diagnosticData)")
+            for diagnosticData in self.neuralNetworkViewController.train(epochs: epochs, learningRate: learningRate) {
+                // Call into the information setter from the information view controller
+                self.setDiagnosticInformation(diagnosticData)
             }
         }
         // Toggle the activity of this view, switching to the information view

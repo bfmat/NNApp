@@ -3,6 +3,9 @@ import UIKit
 // The view controller that displays the neurons and weights of a neural network
 public class NeuralNetworkViewController : UIViewController {
     
+    // The type of the diagnostic information provided
+    public typealias DiagnosticInformation = Int
+    
     // The duration over which the neurons and weights fade in and out
     private let fadeDuration: TimeInterval = 1
     // The duration over which the neurons animate to new positions
@@ -66,7 +69,7 @@ public class NeuralNetworkViewController : UIViewController {
         }
         
         // Iteration function that returns diagnostic data
-        func next() -> Int? {
+        func next() -> DiagnosticInformation? {
             // Get the next value out of the full training iterator, returning nil if the value is nil
             guard let (epoch, weightMatrices, averageActivations) = fullTrainingIterator.next() else {
                 return nil
