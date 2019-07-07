@@ -199,6 +199,11 @@ class NeuralNetwork {
                 averageActivations.append(averageLayerActivations)
             }
             
+            print("Epoch: \(epoch)")
+            print("Weights: \(neuralNetwork.weightMatrices)")
+            print("Activations: \(averageActivations)")
+            print()
+            
             // Return the epoch number, the network's weight matrices, and the average activations for each layer
             return (epoch: epoch, weightMatrices: neuralNetwork.weightMatrices, averageActivations: averageActivations)
         }
